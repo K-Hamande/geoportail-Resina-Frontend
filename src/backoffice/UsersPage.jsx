@@ -54,6 +54,8 @@ function UsersPage() {
               <tr>
                 <th>Login</th>
                 <th>Nom complet</th>
+                <th>Rôle</th>
+                <th>Sites</th>
                 <th>Statut</th>
                 <th>Actions</th>
               </tr>
@@ -64,6 +66,8 @@ function UsersPage() {
                   <td className="site-name-cell">{user.login}</td>
                   <td>{user.nomComplet}</td>
                   <td>
+                  <td>{user.role}</td>
+                  <td>{user.sitesAutorises?.length > 0 ? user.sitesAutorises.join(", ") : "Tous les sites"}</td>
                     <span className={`status-badge ${user.actif ? "badge-ok" : "badge-unknown"}`}>
                       {user.actif ? "Actif" : "Désactivé"}
                     </span>
