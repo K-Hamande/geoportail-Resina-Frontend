@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost } from "../shared/backofficeApiClient";
@@ -61,10 +62,10 @@ function SiteFormPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  function ajouterNiveau() {
+function ajouterNiveau() {
     setNouveauxNiveaux((prev) => [
       ...prev,
-      { id: Date.now(), etageLabel: "", libelleAffiche: "", type: "BORNE_WIFI", nombre: 1 },
+      { id: Date.now(), etageLabel: "", libelleAffiche: "", type: "BORNE_WIFI", nombre: 1, netxmsObjectId: "" },
     ]);
   }
 
@@ -112,16 +113,23 @@ function SiteFormPage() {
       // (un appel API par appareil). Promise.all lance toutes les creations
       // d'un meme niveau en parallele.
       for (const niveau of nouveauxNiveaux) {
+        const baseNetxmsId = niveau.netxmsObjectId === "" ? null : parseInt(niveau.netxmsObjectId, 10);
+
         const creations = Array.from({ length: Number(niveau.nombre) || 1 }, (_, index) => {
           const libelle = Number(niveau.nombre) > 1
             ? `${niveau.libelleAffiche} ${index + 1}`
             : niveau.libelleAffiche;
 
+          // Si un ID de base est fourni et qu'on cree plusieurs
+          // equipements, on incremente pour eviter que 2 objets
+          // physiques distincts partagent le meme identifiant NetXMS.
+          const netxmsObjectId = baseNetxmsId === null ? null : baseNetxmsId + index;
+
           return adminPost(`/backoffice/api/v1/sites/${form.siteId}/equipments`, getAuthHeader(), {
             etageLabel: niveau.etageLabel,
             type: niveau.type,
             libelleAffiche: libelle,
-            netxmsObjectId: null,
+            netxmsObjectId,
           });
         });
         await Promise.all(creations);
@@ -141,7 +149,7 @@ function SiteFormPage() {
 
   return (
     <div className="backoffice-content">
-      <Link to="/backoffice/sites" className="back-link">← Retour à la liste</Link>
+      <Link to="/backoffice/sites" className="btn btn-info">← Retour à la liste</Link>
 
       <h1 style={{ marginTop: "12px" }}>{isEdition ? "Modifier un site" : "Créer un site"}</h1>
       <p className="page-subtitle">
@@ -218,11 +226,12 @@ function SiteFormPage() {
 
           {(recapitulatifExistant.length > 0 || nouveauxNiveaux.length > 0) && (
             <table className="admin-table" style={{ marginBottom: "16px" }}>
-              <thead>
+<thead>
                 <tr>
                   <th>Étage</th>
                   <th>Libellé affiché</th>
                   <th>Type principal</th>
+                  <th>ID objet NetXMS</th>
                   <th>Nb équipements</th>
                   <th></th>
                 </tr>
@@ -272,6 +281,15 @@ function SiteFormPage() {
                       <input
                         className="inline-input"
                         type="number"
+                        placeholder="ex: 10424"
+                        value={n.netxmsObjectId}
+                        onChange={(e) => modifierNiveau(n.id, "netxmsObjectId", e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="inline-input"
+                        type="number"
                         min="1"
                         style={{ width: "70px" }}
                         value={n.nombre}
@@ -279,7 +297,7 @@ function SiteFormPage() {
                       />
                     </td>
                     <td>
-                      <button type="button" className="btn-link" style={{ color: "var(--color-ko)" }} onClick={() => retirerNiveau(n.id)}>
+                      <button type="button" className="btn btn-danger" style={{ color: "white" }} onClick={() => retirerNiveau(n.id)}>
                         Retirer
                       </button>
                     </td>

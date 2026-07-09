@@ -11,7 +11,7 @@ function Topbar({ title, subtitle, onRefresh }) {
           Connecté à NetXMS
         </span>
         {onRefresh && (
-          <button className="btn-outline" onClick={onRefresh}>
+          <button className="btn btn-info" style={{ color: "white" }}  onClick={onRefresh}>
             Actualiser
           </button>
         )}

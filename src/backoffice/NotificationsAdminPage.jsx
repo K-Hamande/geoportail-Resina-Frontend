@@ -80,7 +80,7 @@ function NotificationsAdminPage() {
                     </span>
                   </td>
                   <td>
-                    <button className="btn-link" style={{ color: "var(--color-ko)" }} onClick={() => supprimer(t.id)}>
+                    <button className="btn btn-danger" style={{ color: "white" }} onClick={() => supprimer(t.id)}>
                       Supprimer
                     </button>
                   </td>

@@ -92,7 +92,7 @@ function EquipmentsPage() {
                   <td>{eq.libelleAffiche}</td>
                   <td>{eq.netxmsObjectId}</td>
                   <td className="table-actions">
-                    <button className="btn-link" style={{ color: "var(--color-ko)" }} onClick={() => supprimer(eq.id)}>
+                    <button className="btn btn-danger" style={{ color: "white" }} onClick={() => supprimer(eq.id)}>
                       Supprimer
                     </button>
                   </td>

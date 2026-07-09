@@ -3,14 +3,53 @@ import { useAuth } from "../shared/AuthContext";
 import { adminGet } from "../shared/backofficeApiClient";
 import Topbar from "./Topbar";
 
+// Transforme "Xavier KIWALO" en "KIWALO X." (nom de famille en majuscules
+// + initiale du prenom), pour reprendre exactement le format d'affichage
+// de la maquette de reference.
+function formaterNomAffiche(nomComplet) {
+  if (!nomComplet) return "Utilisateur inconnu";
+  const mots = nomComplet.trim().split(/\s+/);
+  if (mots.length < 2) return nomComplet.toUpperCase();
+
+  const prenom = mots[0];
+  const nomDeFamille = mots.slice(1).join(" ");
+  return `${nomDeFamille.toUpperCase()} ${prenom.charAt(0).toUpperCase()}.`;
+}
+
+// Formate en "DD/MM/YYYY" + "HHhMM" (avec la lettre "h" comme separateur,
+// convention administrative francophone reprise dans la maquette),
+// plutot que le format ISO par defaut de toLocaleTimeString ("HH:MM").
+function formaterDateHeure(dateIso) {
+  const date = new Date(dateIso);
+  const jour = String(date.getDate()).padStart(2, "0");
+  const mois = String(date.getMonth() + 1).padStart(2, "0");
+  const annee = date.getFullYear();
+  const heures = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return { dateAffichee: `${jour}/${mois}/${annee}`, heureAffichee: `${heures}h${minutes}` };
+}
+
 function AuditLogPage() {
   const { getAuthHeader } = useAuth();
   const [entries, setEntries] = useState([]);
+  const [nomsParLogin, setNomsParLogin] = useState({});
   const [erreur, setErreur] = useState(null);
 
   function charger() {
-    adminGet("/backoffice/api/v1/audit-log", getAuthHeader())
-      .then(setEntries)
+    // Les deux appels sont independants (le journal et la liste des
+    // utilisateurs) - on les lance en parallele avec Promise.all,
+    // exactement comme deja fait pour le Tableau de bord (Etape 9).
+    Promise.all([
+      adminGet("/backoffice/api/v1/audit-log", getAuthHeader()),
+      adminGet("/backoffice/api/v1/users", getAuthHeader()),
+    ])
+      .then(([auditEntries, users]) => {
+        setEntries(auditEntries);
+
+        const lookup = {};
+        users.forEach((u) => { lookup[u.login] = u.nomComplet; });
+        setNomsParLogin(lookup);
+      })
       .catch((err) => setErreur(err.message));
   }
 
@@ -18,10 +57,6 @@ function AuditLogPage() {
     charger();
   }, []);
 
-// Echappe une valeur pour le format CSV : si elle contient une virgule,
-  // un guillemet ou un retour a la ligne, on l'entoure de guillemets et
-  // on double les guillemets internes (regle standard du format CSV,
-  // RFC 4180).
   function echapperCsv(valeur) {
     const texte = String(valeur ?? "");
     if (texte.includes(",") || texte.includes('"') || texte.includes("\n")) {
@@ -35,18 +70,14 @@ function AuditLogPage() {
     const lignes = entries.map((e) =>
       [
         new Date(e.horodatage).toLocaleString("fr-FR"),
-        e.auteur,
+        nomsParLogin[e.auteur] ?? e.auteur,
         e.action,
         e.details ?? "",
       ]
         .map(echapperCsv)
         .join(",")
     );
-
-    // "\uFEFF" (BOM UTF-8) en tete du fichier : sans lui, Excel affiche
-    // parfois mal les accents (é, è, à...) a l'ouverture d'un CSV UTF-8.
     const contenu = "\uFEFF" + entetes.join(",") + "\n" + lignes.join("\n");
-
     const blob = new Blob([contenu], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -58,7 +89,11 @@ function AuditLogPage() {
 
   return (
     <>
-      <Topbar title="Journal d'activité" subtitle="Traçabilité de toutes les modifications effectuées dans le Backoffice — conservation 90 jours minimum" onRefresh={charger} />
+      <Topbar
+        title="Journal d'activité"
+        subtitle="Traçabilité de toutes les modifications effectuées dans le Backoffice — conservation 90 jours minimum"
+        onRefresh={charger}
+      />
 
       <div className="backoffice-content">
         {erreur && <p style={{ color: "var(--color-ko)" }}>Erreur : {erreur}</p>}
@@ -72,21 +107,26 @@ function AuditLogPage() {
           </div>
 
           <div className="audit-list">
-            {entries.map((entry) => (
-              <div key={entry.id} className="audit-entry">
-                <span className="audit-dot"></span>
-                <div>
-                  <div className="audit-line">
-                    <span className="audit-date">{new Date(entry.horodatage).toLocaleDateString("fr-FR")}</span>{" "}
-                    <span className="audit-time">{new Date(entry.horodatage).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>{" "}
-                    <strong>{entry.auteur}</strong>
-                  </div>
-                  <div className="audit-action">
-                    {entry.action}{entry.details ? ` — ${entry.details}` : ""}
+            {entries.map((entry) => {
+              const { dateAffichee, heureAffichee } = formaterDateHeure(entry.horodatage);
+              const nomAffiche = formaterNomAffiche(nomsParLogin[entry.auteur]);
+
+              return (
+                <div key={entry.id} className="audit-entry">
+                  <span className="audit-dot"></span>
+                  <div>
+                    <div className="audit-line">
+                      <span className="audit-date">{dateAffichee}</span>{" "}
+                      <span className="audit-time">{heureAffichee}</span>{" "}
+                      <strong>{nomAffiche}</strong>
+                    </div>
+                    <div className="audit-action">
+                      {entry.action}{entry.details ? ` — ${entry.details}` : ""}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {entries.length === 0 && <p>Aucune activité enregistrée.</p>}

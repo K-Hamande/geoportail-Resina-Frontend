@@ -15,7 +15,7 @@ Avant de lancer le projet, assurez-vous d'avoir installé :
 
 | Outil | Version | Lien de téléchargement |
 |-------|---------|------------------------|
-| Node.js | 18 ou supérieur (LTS recommandé) | [nodejs.org](https://nodejs.org/) |
+| Node.js | 18 ou supérieur (LTS recommandé) | [nodejs.org](https://nodcejs.org/) |
 | npm | 9+ (inclus avec Node.js) | — |
 
 > **Important** : le backend Spring Boot doit être lancé au préalable

@@ -1,13 +1,29 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../shared/AuthContext";
 
 function BackofficeLayout() {
   const { auth, logout } = useAuth();
+  const [menuOuvert, setMenuOuvert] = useState(false);
   const linkClass = ({ isActive }) => (isActive ? "sidebar-link active" : "sidebar-link");
 
   return (
     <div className="backoffice-shell">
-      <aside className="sidebar">
+      {/* Barre visible UNIQUEMENT sur petit ecran (cf. CSS) : bouton
+          hamburger + titre, remplace la sidebar tant qu'elle est fermee. */}
+      <div className="mobile-topbar">
+        <button className="mobile-menu-btn" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir le menu">
+          ☰
+        </button>
+        <span className="mobile-topbar-title">GéoPortail RESINA</span>
+      </div>
+
+      {/* Fond sombre affiche derriere le menu quand il est ouvert sur
+          mobile - un clic dessus referme le menu (meme principe que
+          les modales : onClick sur l'overlay, pas sur le contenu). */}
+      {menuOuvert && <div className="sidebar-overlay" onClick={() => setMenuOuvert(false)}></div>}
+
+      <aside className={`sidebar ${menuOuvert ? "open" : ""}`}>
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">R</div>
           <div>
@@ -18,7 +34,10 @@ function BackofficeLayout() {
 
         <div className="sidebar-badge">Backoffice DEST/DIG</div>
 
-        <nav className="sidebar-nav">
+        {/* onClick sur <nav> : des qu'un lien est clique (mobile),
+            on referme automatiquement le menu - evite d'avoir a le
+            fermer manuellement apres chaque navigation. */}
+        <nav className="sidebar-nav" onClick={() => setMenuOuvert(false)}>
           <div className="sidebar-section-title">Supervision</div>
           <NavLink to="/backoffice" end className={linkClass}>Tableau de bord</NavLink>
           <NavLink to="/backoffice/sites" className={linkClass}>Gestion des sites</NavLink>

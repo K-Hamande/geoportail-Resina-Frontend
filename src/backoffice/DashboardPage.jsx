@@ -139,7 +139,7 @@ function DashboardPage() {
                     </td>
                     <td>à l'instant</td>
                     <td>
-                      <Link to="/backoffice/sites" className="btn-link">Voir →</Link>
+                      <Link to="/backoffice/sites" className="btn btn-info" style={{ color: "white" }} >Voir →</Link>
                     </td>
                   </tr>
                 ))}
