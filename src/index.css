@@ -6,7 +6,7 @@
 
   --color-ok: #0D9B5A;
   --color-warn: #C97C0A;
-  --color-ko: #D93535;
+  --color-ko: #F44336;
   --color-unknown: #6B7280;
 
   --color-bg: #F5F7FA;
@@ -201,12 +201,28 @@ body {
 
 .floors-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); margin-bottom: 8px; font-weight: 700; }
 
-.floor-row { display: flex; gap: 10px; align-items: flex-start; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
-.floor-row.ok { background: #EAF9F1; }
+.floor-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;   /* base neutre, surchargee ci-dessous par variante */
+}
+
+.floor-row.ok { background: #EAF9F1; border-color: #C8ECD9; }
+.floor-row.warn { background: #FDF2E3; border-color: #F5DDB0; }
+.floor-row.ko { background: #FFF4F4; border-color: #FAD4D4; }.floor-row.ok { background: #EAF9F1; }
 .floor-row.warn { background: #FDF2E3; }
 .floor-row.ko { background: #FDEAEA; }
-.floor-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
-.floor-dot.ok { background: var(--color-ok); }
+.floor-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}.floor-dot.ok { background: var(--color-ok); }
 .floor-dot.warn { background: var(--color-warn); }
 .floor-dot.ko { background: var(--color-ko); }
 .floor-name { font-weight: 700; font-size: 13px; }
@@ -899,4 +915,56 @@ body {
   .modal-box { padding: 20px; max-height: 85vh; }
   .modal-overlay { padding: 12px; }
   .panel { padding: 16px; }
+}
+.alert-card {
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+
+.alert-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.alert-card-lu {
+  opacity: 0.6;
+}
+
+.unread-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-ko);
+  border: 2px solid white;
+}
+
+.alert-message {
+  font-size: 13px;
+  color: var(--color-text);
+  margin: 4px 0 10px;
+  line-height: 1.4;
+}
+
+.alert-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.alert-time {
+  color: var(--color-text-muted);
+}
+
+.alert-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.alert-link:hover {
+  text-decoration: underline;
 }

@@ -74,7 +74,7 @@ function UsersPage() {
                   </td>
                   <td className="table-actions">
                     <button className="btn btn-danger" style={{ color: "white" }}  onClick={() => setUserResetId(user.id)}>
-                      Réinitialiser mdp
+                      Réinitialiser
                     </button>
                     <button className="btn btn-info" style={{ color: "white" }}  onClick={() => toggleActive(user)}>
                       {user.actif ? "Désactiver" : "Activer"}
