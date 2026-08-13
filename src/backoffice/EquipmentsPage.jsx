@@ -1,16 +1,24 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
-import { adminGet, adminDelete } from "../shared/backofficeApiClient";
-import EquipmentFormModal from "./EquipmentFormModal";
+import { adminGet, adminPost, adminPut } from "../shared/backofficeApiClient";
 import Topbar from "./Topbar";
 
+// Les equipements sont desormais decouverts automatiquement depuis NetXMS
+// (bouton "Synchroniser") - cette page ne permet plus que d'assigner un
+// etage a un equipement deja synchronise, jamais d'en creer/supprimer.
 function EquipmentsPage() {
   const { getAuthHeader } = useAuth();
   const [sites, setSites] = useState([]);
   const [siteId, setSiteId] = useState(null);
   const [equipments, setEquipments] = useState([]);
   const [erreur, setErreur] = useState(null);
-  const [modaleOuverte, setModaleOuverte] = useState(false);
+  const [synchronisation, setSynchronisation] = useState(false);
+  const [messageSync, setMessageSync] = useState(null);
+
+  // Brouillon des etages en cours d'edition (id equipement -> texte tape),
+  // separe des valeurs enregistrees pour ne pas ecraser l'affichage
+  // pendant la frappe.
+  const [brouillonsEtage, setBrouillonsEtage] = useState({});
 
   useEffect(() => {
     adminGet("/backoffice/api/v1/sites", getAuthHeader())
@@ -24,7 +32,10 @@ function EquipmentsPage() {
   function chargerEquipments() {
     if (!siteId) return;
     adminGet(`/backoffice/api/v1/sites/${siteId}/equipments`, getAuthHeader())
-      .then(setEquipments)
+      .then((data) => {
+        setEquipments(data);
+        setBrouillonsEtage(Object.fromEntries(data.map((eq) => [eq.id, eq.etageLabel ?? ""])));
+      })
       .catch((err) => setErreur(err.message));
   }
 
@@ -32,28 +43,48 @@ function EquipmentsPage() {
     chargerEquipments();
   }, [siteId]);
 
-  async function supprimer(equipmentId) {
+  async function synchroniser() {
+    setSynchronisation(true);
+    setMessageSync(null);
+    setErreur(null);
     try {
-      await adminDelete(`/backoffice/api/v1/equipments/${equipmentId}`, getAuthHeader());
+      const resultat = await adminPost("/backoffice/api/v1/equipments/sync-netxms", getAuthHeader());
+      setMessageSync(
+        `Synchronisation terminée : ${resultat.crees} créé(s), ${resultat.misAJour} mis à jour, ` +
+          `${resultat.ignores} ignoré(s) (site pas encore importé).`
+      );
+      chargerEquipments();
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setSynchronisation(false);
+    }
+  }
+
+  async function enregistrerEtage(equipmentId) {
+    try {
+      await adminPut(`/backoffice/api/v1/equipments/${equipmentId}/etage`, getAuthHeader(), {
+        etageLabel: brouillonsEtage[equipmentId] || null,
+      });
       chargerEquipments();
     } catch (err) {
       setErreur(err.message);
     }
   }
 
-  function apresEnregistrement() {
-    setModaleOuverte(false);
-    chargerEquipments();
-  }
-
   const typeLabels = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
 
   return (
     <>
-      <Topbar title="Équipements LAN" subtitle="Description manuelle des équipements réseau par étage et par site" onRefresh={chargerEquipments} />
+      <Topbar
+        title="Équipements LAN"
+        subtitle="Équipements découverts automatiquement depuis NetXMS — assignez-leur un étage"
+        onRefresh={chargerEquipments}
+      />
 
       <div className="backoffice-content">
         {erreur && <p style={{ color: "var(--color-ko)" }}>Erreur : {erreur}</p>}
+        {messageSync && <p style={{ color: "var(--color-ok)" }}>{messageSync}</p>}
 
         <div className="panel">
           <div className="panel-header">
@@ -68,8 +99,8 @@ function EquipmentsPage() {
               </select>
             </div>
             <div className="panel-header-actions">
-              <button className="btn-primary" disabled={!siteId} onClick={() => setModaleOuverte(true)}>
-                + Nouvel équipement
+              <button className="btn-primary" disabled={synchronisation} onClick={synchroniser}>
+                {synchronisation ? "Synchronisation…" : "⟳ Synchroniser avec NetXMS"}
               </button>
             </div>
           </div>
@@ -87,13 +118,27 @@ function EquipmentsPage() {
             <tbody>
               {equipments.map((eq) => (
                 <tr key={eq.id}>
-                  <td>{eq.etageLabel}</td>
+                  <td>
+                    <input
+                      type="text"
+                      value={brouillonsEtage[eq.id] ?? ""}
+                      placeholder="Non assigné"
+                      onChange={(e) =>
+                        setBrouillonsEtage((prev) => ({ ...prev, [eq.id]: e.target.value }))
+                      }
+                      style={{ width: "140px" }}
+                    />
+                  </td>
                   <td>{typeLabels[eq.type] ?? eq.type}</td>
                   <td>{eq.libelleAffiche}</td>
                   <td>{eq.netxmsObjectId}</td>
                   <td className="table-actions">
-                    <button className="btn btn-danger" style={{ color: "white" }} onClick={() => supprimer(eq.id)}>
-                      Supprimer
+                    <button
+                      className="btn btn-primary"
+                      disabled={brouillonsEtage[eq.id] === (eq.etageLabel ?? "")}
+                      onClick={() => enregistrerEtage(eq.id)}
+                    >
+                      Enregistrer
                     </button>
                   </td>
                 </tr>
@@ -101,7 +146,12 @@ function EquipmentsPage() {
             </tbody>
           </table>
 
-          {equipments.length === 0 && <p>Aucun équipement déclaré pour ce site.</p>}
+          {equipments.length === 0 && (
+            <p>
+              Aucun équipement pour ce site. Cliquez sur « Synchroniser avec NetXMS » pour les
+              découvrir automatiquement.
+            </p>
+          )}
         </div>
       </div>
     </>
