@@ -9,6 +9,72 @@ function classFor(status) {
 
 const TYPE_LABELS = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
 
+// Ne garde que les chiffres d'un numero de telephone. Si le numero est au
+// format local burkinabe (8 chiffres, commence par 0), on le convertit au
+// format international requis par WhatsApp (indicatif 226, sans le 0).
+// Hypothese raisonnable pour ce projet ; a ajuster si des contacts DSI
+// utilisent un indicatif different.
+function normaliserNumero(numero) {
+  if (!numero) return null;
+  const chiffres = numero.replace(/\D/g, "");
+  if (chiffres.length === 8) return "226" + chiffres;
+  if (chiffres.length === 9 && chiffres.startsWith("0")) return "226" + chiffres.slice(1);
+  return chiffres;
+}
+
+// Fonction nommee plutot qu'une fleche inline dans onClick - evite tout
+// souci avec le nouveau moteur de transformation JSX de Vite sur ce
+// pattern precis.
+function ignorerClicParent(event) {
+  event.stopPropagation();
+}
+
+function BoutonWhatsapp(props) {
+  const lien = "https://wa.me/" + props.numero;
+  return (
+    <a className="lan-contact-btn lan-contact-btn-whatsapp" href={lien} target="_blank" rel="noopener noreferrer" onClick={ignorerClicParent}>
+      <span>💬</span> WhatsApp
+    </a>
+  );
+}
+
+function BoutonAppel(props) {
+  const lien = "tel:" + props.numero;
+  return (
+    <a className="lan-contact-btn lan-contact-btn-appel" href={lien} onClick={ignorerClicParent}>
+      <span>📞</span> Appeler
+    </a>
+  );
+}
+
+function ContactDsiPanel(props) {
+  const contact = props.contact;
+
+  if (!contact) {
+    return (
+      <p className="lan-contact-absent">
+        Aucun contact DSI renseigné pour ce site. Ajoutez-le depuis le backoffice.
+      </p>
+    );
+  }
+
+  const numeroWhatsapp = normaliserNumero(contact.telephone);
+  const numeroAppel = contact.telephone ? contact.telephone.replace(/\s/g, "") : null;
+
+  return (
+    <div className="lan-contact-card">
+      <div className="lan-contact-nom">{contact.nom || "Contact DSI"}</div>
+      {contact.email && <div className="lan-contact-detail">{contact.email}</div>}
+      {contact.telephone && <div className="lan-contact-detail">{contact.telephone}</div>}
+
+      <div className="lan-contact-buttons">
+        {numeroWhatsapp && <BoutonWhatsapp numero={numeroWhatsapp} />}
+        {numeroAppel && <BoutonAppel numero={numeroAppel} />}
+      </div>
+    </div>
+  );
+}
+
 function LanStatusCard({ data }) {
   // Ensemble des noms d'etage actuellement deplies - un Set permet
   // d'avoir plusieurs etages ouverts en meme temps sans se marcher dessus.
@@ -56,50 +122,50 @@ function LanStatusCard({ data }) {
         </div>
       </div>
 
-      <div className="floors-title">État par niveau</div>
+      <div className="lan-split">
+        <div className="lan-floors-col">
+          <div className="floors-title">État par niveau</div>
 
-      {data.etats.map((etage) => {
-        const ouvert = etagesOuverts.has(etage.etage);
+          {data.etats.map((etage) => {
+            const ouvert = etagesOuverts.has(etage.etage);
 
-        return (
-          <div
-            key={etage.etage}
-            className={`floor-row ${classFor(etage.status)} ${ouvert ? "expanded" : ""}`}
-            onClick={() => basculerEtage(etage.etage)}
-          >
-            <div className="floor-row-header">
-              <span className={`floor-dot ${classFor(etage.status)}`}></span>
-              <div>
-                <div className="floor-name">{etage.etage}</div>
-                <div className="floor-detail">{etage.detail}</div>
-              </div>
-              <span className="floor-chevron">▼</span>
-            </div>
-
-            {ouvert && (
-              <div className="floor-equipment-list" onClick={(e) => e.stopPropagation()}>
-                {etage.equipements.map((eq) => (
-                  <div key={eq.id} className="floor-equipment-item">
-                    <span className={`floor-equipment-dot ${classFor(eq.status)}`}></span>
-                    <span className="floor-equipment-name">{eq.libelleAffiche}</span>
-                    <span className="floor-equipment-type">{TYPE_LABELS[eq.type] ?? eq.type}</span>
+            return (
+              <div
+                key={etage.etage}
+                className={`floor-row ${classFor(etage.status)} ${ouvert ? "expanded" : ""}`}
+                onClick={() => basculerEtage(etage.etage)}
+              >
+                <div className="floor-row-header">
+                  <span className={`floor-dot ${classFor(etage.status)}`}></span>
+                  <div>
+                    <div className="floor-name">{etage.etage}</div>
+                    <div className="floor-detail">{etage.detail}</div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  <span className="floor-chevron">▼</span>
+                </div>
 
-      {data.actionMessage && (
-        <div className="action-box">
-          <span className="floor-dot ko" style={{ marginTop: "4px" }}></span>
-          <div>
-            <div className="action-title">Action requise — Votre DSI</div>
-            <div className="action-text">{data.actionMessage}</div>
-          </div>
+                {ouvert && (
+                  <div className="floor-equipment-list" onClick={ignorerClicParent}>
+                    {etage.equipements.map((eq) => (
+                      <div key={eq.id} className="floor-equipment-item">
+                        <span className={`floor-equipment-dot ${classFor(eq.status)}`}></span>
+                        <span className="floor-equipment-name">{eq.libelleAffiche}</span>
+                        <span className="floor-equipment-type">{TYPE_LABELS[eq.type] ?? eq.type}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
+
+        <div className={`lan-action-col ${data.actionMessage ? "lan-action-col-alerte" : ""}`}>
+          <div className="lan-action-title">Action requise</div>
+          {data.actionMessage && <p className="lan-action-message">{data.actionMessage}</p>}
+          <ContactDsiPanel contact={data.contactDsi} />
+        </div>
+      </div>
     </div>
   );
 }

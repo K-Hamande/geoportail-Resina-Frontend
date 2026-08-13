@@ -17,7 +17,7 @@ function SiteFormPage() {
 
   const [form, setForm] = useState({
     siteId: "", nom: "", ville: "", regionAdministrative: "", batiment: "",
-    latitude: "", longitude: "", contactDsiNom: "", contactDsiTelephone: "",
+    latitude: "", longitude: "", contactDsiNom: "", contactDsiTelephone: "", contactDsiEmail: "",
     netxmsNodeId: "", niveaux: "",
   });
 
@@ -47,6 +47,7 @@ function SiteFormPage() {
             regionAdministrative: site.regionAdministrative ?? "", batiment: site.batiment ?? "",
             latitude: site.latitude ?? "", longitude: site.longitude ?? "",
             contactDsiNom: site.contactDsiNom ?? "", contactDsiTelephone: site.contactDsiTelephone ?? "",
+            contactDsiEmail: site.contactDsiEmail ?? "",
             netxmsNodeId: site.netxmsNodeId ?? "", niveaux: site.niveaux ?? "",
           });
         }
@@ -172,7 +173,11 @@ function SiteFormPage() {
             </div>
             <div className="form-field">
               <label>Téléphone DSI</label>
-              <input name="contactDsiTelephone" value={form.contactDsiTelephone} onChange={handleChange} />
+              <input name="contactDsiTelephone" value={form.contactDsiTelephone} onChange={handleChange} placeholder="ex: 70 12 34 56" />
+            </div>
+            <div className="form-field">
+              <label>Email DSI</label>
+              <input type="email" name="contactDsiEmail" value={form.contactDsiEmail} onChange={handleChange} />
             </div>
           </div>
         </div>

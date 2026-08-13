@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPut } from "../shared/backofficeApiClient";
@@ -12,6 +12,8 @@ function CartographyPage() {
   const { getAuthHeader } = useAuth();
   const [items, setItems] = useState([]);
   const [siteId, setSiteId] = useState(null);
+  const [recherche, setRecherche] = useState("");
+  const [seulementAPositionner, setSeulementAPositionner] = useState(false);
   const [erreur, setErreur] = useState(null);
   const [succes, setSucces] = useState(false);
   const [enregistrement, setEnregistrement] = useState(false);
@@ -37,6 +39,17 @@ function CartographyPage() {
     }
     setSucces(false);
   }, [siteId, items]);
+
+  const itemsFiltres = useMemo(() => {
+    const texte = recherche.trim().toLowerCase();
+    return items.filter((item) => {
+      if (seulementAPositionner && item.positionne) return false;
+      if (!texte) return true;
+      return item.nom.toLowerCase().includes(texte);
+    });
+  }, [items, recherche, seulementAPositionner]);
+
+  const sitePositionnes = items.filter((i) => i.latitude != null && i.longitude != null);
 
   async function enregistrer() {
     setErreur(null);
@@ -68,10 +81,6 @@ function CartographyPage() {
           geometry: { type: "Point", coordinates: [i.longitude, i.latitude] },
         })),
     };
-    // Genere un fichier telechargeable directement depuis le navigateur,
-    // sans avoir besoin d'un endpoint backend dedie : on construit un
-    // Blob (fichier en memoire) et on simule un clic sur un lien de
-    // telechargement.
     const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/geo+json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -81,108 +90,130 @@ function CartographyPage() {
     URL.revokeObjectURL(url);
   }
 
+  const siteSelectionne = items.find((i) => i.siteId === siteId);
   const centreCarte = brouillon.latitude != null && brouillon.longitude != null
     ? [brouillon.latitude, brouillon.longitude]
     : CENTRE_BURKINA_FASO;
 
   return (
     <>
-      <Topbar title="Cartographie" subtitle="Positionnement des sites sur la carte du Burkina Faso" onRefresh={charger} />
+      <Topbar title="Cartographie" subtitle={`Positionnement des sites — ${sitePositionnes.length} sur ${items.length} déjà positionnés`} onRefresh={charger} />
 
       <div className="backoffice-content">
         {erreur && <p style={{ color: "var(--color-ko)" }}>Erreur : {erreur}</p>}
 
-        <div className="panel">
-          <div className="panel-header">
-            <h2>Coordonnées GPS des sites</h2>
-            <div className="panel-header-actions">
-              <button className="btn-outline" onClick={exporterGeoJson}>Exporter GeoJSON</button>
-            </div>
+        <div className="panel-header" style={{ marginBottom: "16px" }}>
+          <h2 style={{ margin: 0 }}>Carte des sites</h2>
+          <div className="panel-header-actions">
+            <button className="btn-outline" onClick={exporterGeoJson}>Exporter GeoJSON</button>
           </div>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Site</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
-                <th>Info au survol</th>
-                <th>Statut carte</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.siteId}>
-                  <td className="site-name-cell">{item.nom}</td>
-                  <td>{item.latitude ?? "—"}</td>
-                  <td>{item.longitude ?? "—"}</td>
-                  <td>{item.infoAuSurvol ?? "—"}</td>
-                  <td>
-                    <span className={`status-badge ${item.positionne ? "badge-ok" : "badge-warn"}`}>
-                      {item.positionne ? "Positionné" : "À positionner"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
 
-        <div className="panel">
-          <div className="panel-header">
-            <h2>Positionner un site</h2>
-          </div>
-
-          <div className="form-field" style={{ maxWidth: "320px", marginBottom: "16px" }}>
-            <label>Site à positionner</label>
-            <select value={siteId || ""} onChange={(e) => setSiteId(e.target.value)}>
-              {items.map((item) => (
-                <option key={item.siteId} value={item.siteId}>{item.nom}</option>
-              ))}
-            </select>
-          </div>
-
-          <p style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
-            Cliquez sur la carte pour définir la position du site sélectionné.
-          </p>
-
+        {/* .map-layout / .map-sidebar : meme composant visuel que la carte
+            cote Decideur (carte a gauche, liste filtrable a droite a partir
+            de 1024px, empile en dessous sur petit ecran). */}
+        <div className="map-layout">
           <MapContainer center={centreCarte} zoom={brouillon.latitude != null ? 12 : 7} className="map-container" key={siteId}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <LocationPicker onPick={(lat, lng) => setBrouillon((prev) => ({ ...prev, latitude: lat, longitude: lng }))} />
+
+{items
+              .filter((item) => item.latitude != null && item.longitude != null && item.siteId !== siteId)
+              .map((item) => (
+                <Marker key={item.siteId} position={[item.latitude, item.longitude]} icon={buildColoredMarkerIcon("UNKNOWN")} />
+              ))}
+
             {brouillon.latitude != null && brouillon.longitude != null && (
               <Marker position={[brouillon.latitude, brouillon.longitude]} icon={buildColoredMarkerIcon("OK")} />
             )}
           </MapContainer>
 
-          <div className="form-grid" style={{ marginTop: "16px" }}>
-            <div className="form-field">
-              <label>Latitude</label>
-              <input type="number" step="0.0001" value={brouillon.latitude ?? ""} readOnly />
-            </div>
-            <div className="form-field">
-              <label>Longitude</label>
-              <input type="number" step="0.0001" value={brouillon.longitude ?? ""} readOnly />
-            </div>
-            <div className="form-field" style={{ gridColumn: "span 2" }}>
-              <label>Info affichée au survol / clic</label>
+          <div className="map-sidebar">
+            <div className="form-field" style={{ marginBottom: "8px" }}>
               <input
-                value={brouillon.infoAuSurvol}
-                onChange={(e) => setBrouillon((prev) => ({ ...prev, infoAuSurvol: e.target.value }))}
-                placeholder="ex: Hub central RESINA"
+                type="text"
+                placeholder="Rechercher un site…"
+                value={recherche}
+                onChange={(e) => setRecherche(e.target.value)}
               />
             </div>
-          </div>
 
-          {succes && <p style={{ color: "var(--color-ok)" }}>Position enregistrée avec succès.</p>}
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", marginBottom: "10px", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={seulementAPositionner}
+                onChange={(e) => setSeulementAPositionner(e.target.checked)}
+              />
+              À positionner uniquement
+            </label>
 
-          <div className="modal-actions" style={{ justifyContent: "flex-start", marginTop: "16px" }}>
-            <button className="btn-primary" onClick={enregistrer} disabled={enregistrement || brouillon.latitude == null}>
-              {enregistrement ? "Enregistrement..." : "Enregistrer la position"}
-            </button>
+            <div className="map-sidebar-count">
+              {itemsFiltres.length} site{itemsFiltres.length > 1 ? "s" : ""}
+            </div>
+
+            <div className="map-sidebar-list">
+              {itemsFiltres.map((item) => (
+                <button
+                  type="button"
+                  key={item.siteId}
+                  className="map-site-item"
+                  style={{ border: "none", width: "100%", cursor: "pointer", background: item.siteId === siteId ? "#E9F1FB" : "transparent" }}
+                  onClick={() => setSiteId(item.siteId)}
+                >
+                  <div>
+                    <div className="map-site-item-name">{item.nom}</div>
+                    <div className="map-site-item-ville">{item.positionne ? "Positionné" : "Non positionné"}</div>
+                  </div>
+<span className={`status-badge ${item.positionne ? "badge-unknown" : "badge-warn"}`}>
+                    {item.positionne ? "Positionné" : "À positionner"}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+
+        {siteSelectionne && (
+          <div className="panel" style={{ marginTop: "16px" }}>
+            <div className="panel-header">
+              <h2>Positionner : {siteSelectionne.nom}</h2>
+            </div>
+
+            <p style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
+              Cliquez sur la carte ci-dessus pour définir/modifier la position de ce site.
+            </p>
+
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Latitude</label>
+                <input type="number" step="0.0001" value={brouillon.latitude ?? ""} readOnly />
+              </div>
+              <div className="form-field">
+                <label>Longitude</label>
+                <input type="number" step="0.0001" value={brouillon.longitude ?? ""} readOnly />
+              </div>
+              <div className="form-field" style={{ gridColumn: "span 2" }}>
+                <label>Info affichée au survol / clic</label>
+                <input
+                  value={brouillon.infoAuSurvol}
+                  onChange={(e) => setBrouillon((prev) => ({ ...prev, infoAuSurvol: e.target.value }))}
+                  placeholder="ex: Hub central RESINA"
+                />
+              </div>
+            </div>
+
+            {succes && <p style={{ color: "var(--color-ok)" }}>Position enregistrée avec succès.</p>}
+
+            <div className="modal-actions" style={{ justifyContent: "flex-start", marginTop: "8px" }}>
+              <button className="btn-primary" onClick={enregistrer} disabled={enregistrement || brouillon.latitude == null}>
+                {enregistrement ? "Enregistrement..." : "Enregistrer la position"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

@@ -1231,3 +1231,645 @@ body {
   .map-site-item-name { font-size: 12px; font-weight: 600; }
   .map-site-item-ville { font-size: 11px; color: var(--color-text-muted); }
 }
+
+/* ==================================================================
+   LAN STATUS CARD : partage 3/4 (etat par niveau) - 1/4 (action requise)
+   ================================================================== */
+.lan-split {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lan-floors-col { flex: 1; }
+
+.lan-action-col {
+  background: #F5F6F8;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.lan-action-col-alerte {
+  background: #FDEAEA;
+}
+
+.lan-action-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.lan-action-message {
+  font-size: 12px;
+  color: var(--color-text);
+  margin: 0 0 10px;
+}
+
+.lan-contact-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.lan-contact-nom { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.lan-contact-detail { font-size: 12px; color: var(--color-text-muted); word-break: break-word; }
+
+.lan-contact-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lan-contact-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 40px;
+}
+
+.lan-contact-btn-whatsapp { background: #25D366; color: white; }
+.lan-contact-btn-appel { background: var(--color-primary); color: white; }
+
+.lan-contact-absent {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+@media (min-width: 900px) {
+  .lan-split {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .lan-floors-col { flex: 3; }
+  .lan-action-col { flex: 1; }
+}
+
+/* ==================================================================
+   SELECTEUR DE SITE AVEC RECHERCHE (remplace le <select> simple,
+   impraticable avec 1600+ sites)
+   ================================================================== */
+
+.site-select-trigger {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.site-select-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: -40px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  padding: 10px;
+  z-index: 50;
+  color: var(--color-text);
+}
+
+.site-select-search {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.site-select-count {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  margin: 8px 2px 4px;
+}
+
+.site-select-list {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-select-empty {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.site-select-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.site-select-item:hover { background: #F5F6F8; }
+
+.site-select-item-actif {
+  background: #E6F0FA;
+}
+
+.site-select-item-nom { font-size: 13px; font-weight: 600; }
+.site-select-item-ville { font-size: 11px; color: var(--color-text-muted); }
+
+@media (min-width: 1024px) {
+  .site-select-panel { right: 0; max-width: 420px; }
+}
+
+/* ==================================================================
+   NAVIGATION FIXE (mobile : barre basse ; desktop : bandeau + nav du haut)
+   ================================================================== */
+
+/* ---- MOBILE / TABLETTE (< 1024px) : barre de navigation basse fixe ---- */
+.nav-mobile-slot {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 100;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Evite que le bas du contenu soit cache derriere la barre fixe */
+.page-content { padding-bottom: 72px; }
+
+@media (min-width: 640px) {
+  .nav-mobile-slot { max-width: 720px; }
+}
+
+/* ---- DESKTOP (>= 1024px) : bandeau + navigation du haut, fixes au scroll ---- */
+@media (min-width: 1024px) {
+  .nav-mobile-slot { display: none; }   /* deja masque plus haut, redondance sans risque */
+
+  .page-content { padding-bottom: 0; }  /* plus besoin, la nav n'est plus en bas */
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+}
+
+/* ==================================================================
+   REFONTE VISUELLE DU BACKOFFICE
+   Tout est scope sous .backoffice-shell : aucun risque de fuite vers
+   les pages Decideur, meme si les noms de classes se recoupent
+   (.btn-primary, .status-badge, etc.)
+   ================================================================== */
+
+.backoffice-shell {
+  --bo-primary: #0A3D7A;
+  --bo-primary-deep: #072B57;
+  --bo-primary-soft: #E9F1FB;
+  --bo-ink: #10203D;
+  --bo-ink-muted: #5B6478;
+  --bo-canvas: #EEF1F7;
+  --bo-paper: #FFFFFF;
+  --bo-border: #E1E6EF;
+  --bo-accent: #C79A2E;
+  --bo-ok: #0D9B5A;
+  --bo-warn: #C97C0A;
+  --bo-ko: #D93535;
+  --bo-unknown: #6B7280;
+  --bo-font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --bo-font-body: "Inter", "Segoe UI", sans-serif;
+  --bo-font-mono: "IBM Plex Mono", "Consolas", monospace;
+
+  font-family: var(--bo-font-body);
+  color: var(--bo-ink);
+  background: var(--bo-canvas);
+}
+
+.backoffice-shell * { font-family: inherit; }
+
+.backoffice-shell :focus-visible {
+  outline: 2px solid var(--bo-accent);
+  outline-offset: 2px;
+}
+
+/* ---- SIDEBAR ---- */
+.backoffice-shell .sidebar {
+  width: 264px;
+  background: linear-gradient(180deg, var(--bo-primary) 0%, var(--bo-primary-deep) 100%);
+  color: white;
+}
+
+.backoffice-shell .sidebar-brand-icon {
+  background: var(--bo-accent);
+  color: var(--bo-primary-deep);
+  font-family: var(--bo-font-display);
+  font-weight: 700;
+}
+
+.backoffice-shell .sidebar-brand-title {
+  font-family: var(--bo-font-display);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.backoffice-shell .sidebar-brand-subtitle {
+  font-size: 10px;
+  letter-spacing: 0.8px;
+}
+
+.backoffice-shell .sidebar-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backoffice-shell .sidebar-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bo-accent);
+  flex-shrink: 0;
+}
+
+.backoffice-shell .sidebar-section-title {
+  font-family: var(--bo-font-display);
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: 0.45;
+}
+
+.backoffice-shell .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  margin-left: -3px;
+  padding: 10px 12px 10px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.backoffice-shell .sidebar-link-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.backoffice-shell .sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+
+.backoffice-shell .sidebar-link.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--bo-accent);
+  color: white;
+  font-weight: 600;
+}
+
+.backoffice-shell .sidebar-user {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backoffice-shell .sidebar-user-avatar {
+  background: var(--bo-primary-deep);
+  font-family: var(--bo-font-display);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.backoffice-shell .sidebar-user-name { font-size: 13px; font-weight: 600; }
+.backoffice-shell .sidebar-user-role { font-size: 10px; opacity: 0.5; }
+
+/* ---- CONTENU PRINCIPAL ---- */
+.backoffice-shell .backoffice-main { background: var(--bo-canvas); }
+
+/* ---- TOPBAR ---- */
+.backoffice-shell .backoffice-topbar {
+  background: var(--bo-paper);
+  border-bottom: 1px solid var(--bo-border);
+  padding: 18px 32px;
+}
+
+.backoffice-shell .backoffice-topbar-title {
+  font-family: var(--bo-font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--bo-ink);
+}
+
+.backoffice-shell .backoffice-topbar-subtitle {
+  font-size: 12px;
+  color: var(--bo-ink-muted);
+}
+
+.backoffice-shell .netxms-badge {
+  background: var(--bo-primary-soft);
+  color: var(--bo-primary-deep);
+  font-weight: 600;
+  border: 1px solid rgba(10, 61, 122, 0.12);
+}
+
+.backoffice-shell .netxms-dot {
+  background: var(--bo-ok);
+  animation: bo-pulse 2s ease-in-out infinite;
+}
+
+@keyframes bo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(13, 155, 90, 0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(13, 155, 90, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backoffice-shell .netxms-dot { animation: none; }
+}
+
+.backoffice-shell .backoffice-content { padding: 28px 32px; }
+.backoffice-shell .page-subtitle { color: var(--bo-ink-muted); font-size: 13px; }
+
+.backoffice-shell h1 {
+  font-family: var(--bo-font-display);
+  color: var(--bo-ink);
+  font-size: 20px;
+}
+.backoffice-shell h2 { font-family: var(--bo-font-display); color: var(--bo-ink); }
+
+.backoffice-shell .info-banner {
+  background: var(--bo-primary-soft);
+  color: var(--bo-primary-deep);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+/* ---- KPI ---- */
+.backoffice-shell .kpi-card {
+  background: var(--bo-paper);
+  border: 1px solid var(--bo-border);
+  border-top: 3px solid var(--bo-border);
+  box-shadow: 0 1px 2px rgba(16, 32, 61, 0.04);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.backoffice-shell .kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 32, 61, 0.08);
+}
+
+.backoffice-shell .kpi-card.kpi-ok { border-top-color: var(--bo-ok); }
+.backoffice-shell .kpi-card.kpi-warn { border-top-color: var(--bo-warn); }
+.backoffice-shell .kpi-card.kpi-ko { border-top-color: var(--bo-ko); }
+
+.backoffice-shell .kpi-label {
+  color: var(--bo-ink-muted);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.backoffice-shell .kpi-value {
+  font-family: var(--bo-font-display);
+  color: var(--bo-ink);
+  font-weight: 700;
+}
+
+.backoffice-shell .kpi-value-sub { color: var(--bo-ink-muted); font-weight: 500; }
+.backoffice-shell .kpi-sub { color: var(--bo-ink-muted); }
+
+/* ---- PANNEAUX / TABLEAUX ---- */
+.backoffice-shell .panel {
+  background: var(--bo-paper);
+  border: 1px solid var(--bo-border);
+  box-shadow: 0 1px 2px rgba(16, 32, 61, 0.04);
+}
+
+.backoffice-shell .panel-header h2 { font-size: 15px; }
+
+.backoffice-shell .admin-table th {
+  color: var(--bo-ink-muted);
+  font-family: var(--bo-font-body);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--bo-border);
+}
+
+.backoffice-shell .admin-table td {
+  border-bottom: 1px solid var(--bo-border);
+  color: var(--bo-ink);
+}
+
+.backoffice-shell .admin-table tr:hover td {
+  background: var(--bo-canvas);
+}
+
+.backoffice-shell .admin-table .site-name-cell { font-weight: 600; color: var(--bo-ink); }
+.backoffice-shell .admin-table .site-location-cell { color: var(--bo-ink-muted); }
+
+/* IDs, coordonnees, dates : registre "donnee technique" */
+.backoffice-shell .admin-table td:has(> code),
+.backoffice-shell code {
+  font-family: var(--bo-font-mono);
+  font-size: 12px;
+}
+
+/* ---- BOUTONS ---- */
+.backoffice-shell .btn-primary,
+.backoffice-shell .btn.btn-info {
+  background: var(--bo-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.backoffice-shell .btn-primary:hover,
+.backoffice-shell .btn.btn-info:hover { background: var(--bo-primary-deep); }
+
+.backoffice-shell .btn-secondary,
+.backoffice-shell .btn-outline {
+  background: var(--bo-paper);
+  border: 1px solid var(--bo-border);
+  color: var(--bo-ink);
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+}
+.backoffice-shell .btn-secondary:hover,
+.backoffice-shell .btn-outline:hover {
+  background: var(--bo-canvas);
+  border-color: var(--bo-primary);
+}
+
+.backoffice-shell .btn.btn-danger {
+  background: var(--bo-ko);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+.backoffice-shell .btn.btn-danger:hover { background: #B92A2A; }
+
+.backoffice-shell .btn-link { color: var(--bo-primary); font-weight: 600; }
+.backoffice-shell .btn-link:hover { text-decoration: underline; }
+
+/* ---- FORMULAIRES ---- */
+.backoffice-shell .form-field label {
+  color: var(--bo-ink-muted);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.backoffice-shell .form-field input,
+.backoffice-shell .form-field select,
+.backoffice-shell .filter-input,
+.backoffice-shell .site-select-search,
+.backoffice-shell .inline-input {
+  border: 1px solid var(--bo-border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--bo-ink);
+  background: var(--bo-paper);
+  transition: border-color 0.15s;
+}
+
+.backoffice-shell .form-field input:focus,
+.backoffice-shell .form-field select:focus {
+  border-color: var(--bo-accent);
+}
+
+/* ---- MODALES ---- */
+.backoffice-shell .modal-box {
+  background: var(--bo-paper);
+  box-shadow: 0 24px 60px rgba(16, 32, 61, 0.3);
+}
+
+.backoffice-shell .modal-box h2 { font-family: var(--bo-font-display); }
+
+.backoffice-shell .modal-hint {
+  background: var(--bo-primary-soft);
+  color: var(--bo-primary-deep);
+}
+
+/* ---- JOURNAL D'ACTIVITE ---- */
+.backoffice-shell .audit-entry { border-bottom: 1px solid var(--bo-border); }
+.backoffice-shell .audit-dot { background: var(--bo-accent); }
+.backoffice-shell .audit-line { color: var(--bo-ink-muted); }
+.backoffice-shell .audit-date, .backoffice-shell .audit-time { font-family: var(--bo-font-mono); }
+.backoffice-shell .audit-action { color: var(--bo-ink); }
+
+/* ---- BADGES DE STATUT (scope backoffice uniquement) ---- */
+.backoffice-shell .status-badge { font-weight: 700; }
+.backoffice-shell .badge-ok { background: #E3F6EC; color: var(--bo-ok); }
+.backoffice-shell .badge-warn { background: #FDF1E0; color: var(--bo-warn); }
+.backoffice-shell .badge-ko { background: #FCE8E8; color: var(--bo-ko); }
+.backoffice-shell .badge-unknown { background: #EEF0F2; color: var(--bo-unknown); }
+
+/* ---- BARRE MOBILE ---- */
+.backoffice-shell .mobile-topbar {
+  background: linear-gradient(135deg, var(--bo-primary), var(--bo-primary-deep));
+}
+.backoffice-shell .mobile-topbar-title { font-family: var(--bo-font-display); font-weight: 600; }
+
+/* ==================================================================
+   PAGE DE CONNEXION BACKOFFICE (hors .backoffice-shell : route separee)
+   ================================================================== */
+.login-page {
+  background: linear-gradient(135deg, #0A3D7A, #072B57);
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.login-icon {
+  background: #C79A2E;
+  color: #072B57;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.login-title { font-family: "Space Grotesk", sans-serif; color: #10203D; }
+.login-subtitle { color: #5B6478; }
+.login-label { color: #5B6478; }
+
+.login-input {
+  border: 1px solid #E1E6EF;
+  transition: border-color 0.15s;
+}
+.login-input:focus { border-color: #C79A2E; outline: none; }
+
+.login-submit {
+  background: #0A3D7A;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.login-submit:hover { background: #072B57; }
+
+.backoffice-shell .map-container { height: 60vh; min-height: 400px; }
+.backoffice-shell .map-sidebar { max-height: 60vh; }
+
+/* ==================================================================
+   BACKOFFICE : SIDEBAR FIXE (ne defile plus avec le contenu)
+   ================================================================== */
+.backoffice-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.backoffice-shell .sidebar {
+  height: 100vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.backoffice-shell .backoffice-main {
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Sur mobile, la sidebar devient un panneau qui glisse par-dessus le
+   contenu (deja gere par .sidebar.open ailleurs) - on la passe en
+   position fixed pour qu'elle reste ancree a l'ecran meme si la page
+   en dessous a defile avant l'ouverture du menu. */
+@media (max-width: 900px) {
+  .backoffice-shell .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 200;
+  }
+
+  .backoffice-shell .backoffice-main {
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .backoffice-shell {
+    height: auto;
+    overflow: visible;
+  }
+}

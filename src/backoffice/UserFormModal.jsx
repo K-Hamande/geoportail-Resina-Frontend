@@ -1,12 +1,25 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
-import { adminGet, adminPost } from "../shared/backofficeApiClient";
+import { adminGet, adminPost, adminPut } from "../shared/backofficeApiClient";
 
-function UserFormModal({ onClose, onSaved }) {
+// Sert a la fois pour la CREATION (userAModifier absent) et la
+// MODIFICATION (userAModifier fourni) - evite de dupliquer tout le
+// formulaire pour une difference de quelques champs (login/mot de passe
+// non modifiables une fois le compte cree).
+function UserFormModal({ userAModifier, onClose, onSaved }) {
   const { getAuthHeader } = useAuth();
   const [sites, setSites] = useState([]);
-  const [form, setForm] = useState({ login: "", nomComplet: "", motDePasse: "", role: "ADMIN_DEST" });
-  const [sitesSelectionnes, setSitesSelectionnes] = useState([]);
+  const estModification = Boolean(userAModifier);
+
+  const [form, setForm] = useState({
+    login: userAModifier?.login ?? "",
+    nomComplet: userAModifier?.nomComplet ?? "",
+    motDePasse: "",
+    role: userAModifier?.role ?? "ADMIN_DEST",
+  });
+  const [sitesSelectionnes, setSitesSelectionnes] = useState(
+    userAModifier?.sitesAutorises ?? []
+  );
   const [erreur, setErreur] = useState(null);
   const [enregistrement, setEnregistrement] = useState(false);
 
@@ -30,13 +43,20 @@ function UserFormModal({ onClose, onSaved }) {
     setErreur(null);
     setEnregistrement(true);
     try {
-      await adminPost("/backoffice/api/v1/users", getAuthHeader(), {
-        ...form,
-        // Un SUPER_ADMIN a toujours un acces global : on ignore la
-        // selection de sites dans ce cas, meme si des cases avaient
-        // ete cochees avant de changer le role.
-        sitesAutorises: form.role === "SUPER_ADMIN" ? [] : sitesSelectionnes,
-      });
+      const sitesAEnvoyer = form.role === "SUPER_ADMIN" ? [] : sitesSelectionnes;
+
+      if (estModification) {
+        await adminPut(`/backoffice/api/v1/users/${userAModifier.id}`, getAuthHeader(), {
+          nomComplet: form.nomComplet,
+          role: form.role,
+          sitesAutorises: sitesAEnvoyer,
+        });
+      } else {
+        await adminPost("/backoffice/api/v1/users", getAuthHeader(), {
+          ...form,
+          sitesAutorises: sitesAEnvoyer,
+        });
+      }
       onSaved();
     } catch (err) {
       setErreur(err.message);
@@ -50,22 +70,33 @@ function UserFormModal({ onClose, onSaved }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-        <h2>Nouvel utilisateur Backoffice</h2>
+        <h2>{estModification ? "Modifier l'utilisateur" : "Nouvel utilisateur Backoffice"}</h2>
 
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="form-field" style={{ gridColumn: "span 2" }}>
-              <label>Identifiant de connexion *</label>
-              <input name="login" value={form.login} onChange={handleChange} required />
+              <label>Identifiant de connexion {estModification ? "" : "*"}</label>
+              <input
+                name="login"
+                value={form.login}
+                onChange={handleChange}
+                required={!estModification}
+                disabled={estModification}
+              />
+              {estModification && (
+                <span className="field-hint">L'identifiant de connexion ne peut pas être modifié.</span>
+              )}
             </div>
             <div className="form-field" style={{ gridColumn: "span 2" }}>
               <label>Nom complet *</label>
               <input name="nomComplet" value={form.nomComplet} onChange={handleChange} required />
             </div>
-            <div className="form-field" style={{ gridColumn: "span 2" }}>
-              <label>Mot de passe initial *</label>
-              <input name="motDePasse" type="password" value={form.motDePasse} onChange={handleChange} required />
-            </div>
+            {!estModification && (
+              <div className="form-field" style={{ gridColumn: "span 2" }}>
+                <label>Mot de passe initial *</label>
+                <input name="motDePasse" type="password" value={form.motDePasse} onChange={handleChange} required />
+              </div>
+            )}
             <div className="form-field" style={{ gridColumn: "span 2" }}>
               <label>Rôle *</label>
               <select name="role" value={form.role} onChange={handleChange}>
@@ -101,7 +132,7 @@ function UserFormModal({ onClose, onSaved }) {
           <div className="modal-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>Annuler</button>
             <button type="submit" className="btn-primary" disabled={enregistrement}>
-              {enregistrement ? "Création..." : "Créer"}
+              {enregistrement ? "Enregistrement..." : estModification ? "Enregistrer" : "Créer"}
             </button>
           </div>
         </form>

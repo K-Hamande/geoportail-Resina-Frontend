@@ -32,24 +32,27 @@ function BackofficeLayout() {
           </div>
         </div>
 
-        <div className="sidebar-badge">Backoffice DEST/DIG</div>
+        <div className="sidebar-badge">
+          <span className="sidebar-badge-dot"></span>
+          Backoffice DEST/DIG
+        </div>
 
         {/* onClick sur <nav> : des qu'un lien est clique (mobile),
             on referme automatiquement le menu - evite d'avoir a le
             fermer manuellement apres chaque navigation. */}
         <nav className="sidebar-nav" onClick={() => setMenuOuvert(false)}>
           <div className="sidebar-section-title">Supervision</div>
-          <NavLink to="/backoffice" end className={linkClass}>Tableau de bord</NavLink>
-          <NavLink to="/backoffice/sites" className={linkClass}>Gestion des sites</NavLink>
-          <NavLink to="/backoffice/equipments" className={linkClass}>Équipements LAN</NavLink>
+          <NavLink to="/backoffice" end className={linkClass}><span className="sidebar-link-icon">📊</span>Tableau de bord</NavLink>
+          <NavLink to="/backoffice/sites" className={linkClass}><span className="sidebar-link-icon">🏢</span>Gestion des sites</NavLink>
+          <NavLink to="/backoffice/equipments" className={linkClass}><span className="sidebar-link-icon">🔌</span>Équipements LAN</NavLink>
 
           <div className="sidebar-section-title">Configuration</div>
-          <NavLink to="/backoffice/cartography" className={linkClass}>Cartographie</NavLink>
-          <NavLink to="/backoffice/notifications" className={linkClass}>Notifications push</NavLink>
+          <NavLink to="/backoffice/cartography" className={linkClass}><span className="sidebar-link-icon">🗺️</span>Cartographie</NavLink>
+          <NavLink to="/backoffice/notifications" className={linkClass}><span className="sidebar-link-icon">🔔</span>Notifications push</NavLink>
 
           <div className="sidebar-section-title">Administration</div>
-          <NavLink to="/backoffice/users" className={linkClass}>Utilisateurs</NavLink>
-          <NavLink to="/backoffice/audit-log" className={linkClass}>Journal d'activité</NavLink>
+          <NavLink to="/backoffice/users" className={linkClass}><span className="sidebar-link-icon">👤</span>Utilisateurs</NavLink>
+          <NavLink to="/backoffice/audit-log" className={linkClass}><span className="sidebar-link-icon">📜</span>Journal d'activité</NavLink>
         </nav>
 
         <div className="sidebar-user">

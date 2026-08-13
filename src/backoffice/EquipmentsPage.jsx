@@ -5,7 +5,10 @@ import Topbar from "./Topbar";
 
 // Les equipements sont desormais decouverts automatiquement depuis NetXMS
 // (bouton "Synchroniser") - cette page ne permet plus que d'assigner un
-// etage a un equipement deja synchronise, jamais d'en creer/supprimer.
+// etage et/ou un libelle affiche a un equipement deja synchronise.
+// Le "nom technique NetXMS" est affiche a titre de REFERENCE uniquement
+// pour l'admin (pour savoir a quel appareil physique ca correspond) -
+// il n'est JAMAIS envoye au frontend decideur (§4.4 du CDC).
 function EquipmentsPage() {
   const { getAuthHeader } = useAuth();
   const [sites, setSites] = useState([]);
@@ -16,10 +19,8 @@ function EquipmentsPage() {
   const [synchronisation, setSynchronisation] = useState(false);
   const [messageSync, setMessageSync] = useState(null);
 
-  // Brouillon des etages en cours d'edition (id equipement -> texte tape),
-  // separe des valeurs enregistrees pour ne pas ecraser l'affichage
-  // pendant la frappe.
-  const [brouillonsEtage, setBrouillonsEtage] = useState({});
+  // Brouillons en cours d'edition (id equipement -> {etageLabel, libelleAffiche})
+  const [brouillons, setBrouillons] = useState({});
 
   useEffect(() => {
     adminGet("/backoffice/api/v1/sites", getAuthHeader())
@@ -35,7 +36,11 @@ function EquipmentsPage() {
     adminGet(`/backoffice/api/v1/sites/${siteId}/equipments`, getAuthHeader())
       .then((data) => {
         setEquipments(data);
-        setBrouillonsEtage(Object.fromEntries(data.map((eq) => [eq.id, eq.etageLabel ?? ""])));
+        setBrouillons(
+          Object.fromEntries(
+            data.map((eq) => [eq.id, { etageLabel: eq.etageLabel ?? "", libelleAffiche: eq.libelleAffiche ?? "" }])
+          )
+        );
       })
       .catch((err) => setErreur(err.message));
   }
@@ -62,10 +67,12 @@ function EquipmentsPage() {
     }
   }
 
-  async function enregistrerEtage(equipmentId) {
+  async function enregistrer(equipmentId) {
     try {
+      const brouillon = brouillons[equipmentId];
       await adminPut(`/backoffice/api/v1/equipments/${equipmentId}/etage`, getAuthHeader(), {
-        etageLabel: brouillonsEtage[equipmentId] || null,
+        etageLabel: brouillon.etageLabel || null,
+        libelleAffiche: brouillon.libelleAffiche || null,
       });
       chargerEquipments();
     } catch (err) {
@@ -73,24 +80,21 @@ function EquipmentsPage() {
     }
   }
 
+  function modifierBrouillon(equipmentId, champ, valeur) {
+    setBrouillons((prev) => ({
+      ...prev,
+      [equipmentId]: { ...prev[equipmentId], [champ]: valeur },
+    }));
+  }
+
   const typeLabels = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
 
-  // Filtre insensible a la casse sur le nom ou la ville - evite de faire
-  // defiler 1652 sites dans le menu deroulant.
   const sitesFiltres = sites.filter((site) => {
     const texte = recherche.trim().toLowerCase();
     if (!texte) return true;
-    return (
-      site.nom.toLowerCase().includes(texte) ||
-      site.ville.toLowerCase().includes(texte)
-    );
+    return site.nom.toLowerCase().includes(texte) || site.ville.toLowerCase().includes(texte);
   });
 
-  // Si le site actuellement selectionne sort du filtre (recherche tapee),
-  // le <select> affiche silencieusement une autre option sans mettre a
-  // jour l'etat siteId (comportement natif du <select> HTML quand la
-  // "value" controlee ne correspond plus a aucune <option> visible) - on
-  // force ici la synchronisation pour eviter ce decalage affichage/etat.
   useEffect(() => {
     if (sitesFiltres.length === 0) return;
     const siteEncoreVisible = sitesFiltres.some((s) => s.siteId === siteId);
@@ -99,11 +103,17 @@ function EquipmentsPage() {
     }
   }, [recherche, sites]);
 
+  function aChange(eq) {
+    const brouillon = brouillons[eq.id];
+    if (!brouillon) return false;
+    return brouillon.etageLabel !== (eq.etageLabel ?? "") || brouillon.libelleAffiche !== (eq.libelleAffiche ?? "");
+  }
+
   return (
     <>
       <Topbar
         title="Équipements LAN"
-        subtitle="Équipements découverts automatiquement depuis NetXMS — assignez-leur un étage"
+        subtitle="Équipements découverts automatiquement depuis NetXMS — assignez-leur un étage et un libellé"
         onRefresh={chargerEquipments}
       />
 
@@ -144,9 +154,9 @@ function EquipmentsPage() {
             <thead>
               <tr>
                 <th>Étage</th>
+                <th>Libellé affiché (décideur)</th>
                 <th>Type</th>
-                <th>Libellé affiché</th>
-                <th>ID objet NetXMS</th>
+                <th>Nom technique NetXMS <span style={{ fontWeight: 400 }}>(référence admin)</span></th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -156,23 +166,27 @@ function EquipmentsPage() {
                   <td>
                     <input
                       type="text"
-                      value={brouillonsEtage[eq.id] ?? ""}
+                      value={brouillons[eq.id]?.etageLabel ?? ""}
                       placeholder="Non assigné"
-                      onChange={(e) =>
-                        setBrouillonsEtage((prev) => ({ ...prev, [eq.id]: e.target.value }))
-                      }
-                      style={{ width: "140px" }}
+                      onChange={(e) => modifierBrouillon(eq.id, "etageLabel", e.target.value)}
+                      style={{ width: "120px" }}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={brouillons[eq.id]?.libelleAffiche ?? ""}
+                      placeholder={`${typeLabels[eq.type] ?? eq.type} (générique)`}
+                      onChange={(e) => modifierBrouillon(eq.id, "libelleAffiche", e.target.value)}
+                      style={{ width: "180px" }}
                     />
                   </td>
                   <td>{typeLabels[eq.type] ?? eq.type}</td>
-                  <td>{eq.libelleAffiche}</td>
-                  <td>{eq.netxmsObjectId}</td>
+                  <td>
+                    <code>{eq.nomTechniqueNetxms}</code>
+                  </td>
                   <td className="table-actions">
-                    <button
-                      className="btn btn-primary"
-                      disabled={brouillonsEtage[eq.id] === (eq.etageLabel ?? "")}
-                      onClick={() => enregistrerEtage(eq.id)}
-                    >
+                    <button className="btn btn-primary" disabled={!aChange(eq)} onClick={() => enregistrer(eq.id)}>
                       Enregistrer
                     </button>
                   </td>
