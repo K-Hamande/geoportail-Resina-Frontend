@@ -109,42 +109,47 @@ function AlertesPage() {
 
       {incidents.length === 0 && <p>Aucune alerte pour le moment.</p>}
 
-      {incidents.map((incident) => {
-        const couleur = getStatusColor(incident.nouveauStatut);
-        const lu = idsLus.has(incident.id);
+      {/* .alerts-grid : liste empilee sur mobile, grille a 2/3 colonnes a
+          partir de la tablette/desktop (voir index.css) - utile vu le
+          volume potentiel d'incidents sur un reseau de cette taille. */}
+      <div className="alerts-grid">
+        {incidents.map((incident) => {
+          const couleur = getStatusColor(incident.nouveauStatut);
+          const lu = idsLus.has(incident.id);
 
-        return (
-          <div
-            key={incident.id}
-            className={`status-card alert-card ${lu ? "alert-card-lu" : ""}`}
-            style={{ "--card-color": couleur }}
-            onClick={() => marquerCommeLu(incident.id)}
-          >
-            <div className="card-top">
-              <div className="card-icon" style={{ position: "relative" }}>
-                {incident.type === "ANPTIC" ? "🌐" : "🏢"}
-                {!lu && <span className="unread-dot"></span>}
+          return (
+            <div
+              key={incident.id}
+              className={`status-card alert-card ${lu ? "alert-card-lu" : ""}`}
+              style={{ "--card-color": couleur }}
+              onClick={() => marquerCommeLu(incident.id)}
+            >
+              <div className="card-top">
+                <div className="card-icon" style={{ position: "relative" }}>
+                  {incident.type === "ANPTIC" ? "🌐" : "🏢"}
+                  {!lu && <span className="unread-dot"></span>}
+                </div>
+                <div className="card-titles">
+                  <div className="card-title">{incident.siteNom}</div>
+                  <div className="card-subtitle">{incident.ville}</div>
+                </div>
+                <span className={`status-badge ${badgeClass(incident.nouveauStatut)}`}>
+                  {badgeLabel(incident.nouveauStatut)}
+                </span>
               </div>
-              <div className="card-titles">
-                <div className="card-title">{incident.siteNom}</div>
-                <div className="card-subtitle">{incident.ville}</div>
+
+              <p className="alert-message">{incident.message}</p>
+
+              <div className="alert-meta">
+                <span className="alert-time">{formaterTempsRelatif(incident.survenuLe)}</span>
+                <Link to={`/?site=${incident.siteId}`} className="alert-link" onClick={(e) => e.stopPropagation()}>
+                  Voir le détail →
+                </Link>
               </div>
-              <span className={`status-badge ${badgeClass(incident.nouveauStatut)}`}>
-                {badgeLabel(incident.nouveauStatut)}
-              </span>
             </div>
-
-            <p className="alert-message">{incident.message}</p>
-
-            <div className="alert-meta">
-              <span className="alert-time">{formaterTempsRelatif(incident.survenuLe)}</span>
-              <Link to={`/?site=${incident.siteId}`} className="alert-link" onClick={(e) => e.stopPropagation()}>
-                Voir le détail →
-              </Link>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </DecideurLayout>
   );
 }

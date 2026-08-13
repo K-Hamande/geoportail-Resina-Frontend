@@ -968,3 +968,266 @@ body {
 .alert-link:hover {
   text-decoration: underline;
 }
+/* ==================================================================
+   RESPONSIVE DECIDEUR
+   Le bloc .page est fige a 480px (largeur telephone) par defaut - ce
+   qui convient tres bien au mobile, mais laisse un vide inutile sur
+   tablette/desktop. Les regles ci-dessous font grandir ce conteneur
+   par paliers, sans rien casser sur mobile (aucune regle par defaut
+   n'est modifiee, seulement des surcharges a partir de 640px).
+   ================================================================== */
+
+@media (min-width: 640px) {
+  .page { max-width: 720px; }
+}
+
+/* Par defaut (mobile) : seule la navigation basse classique est visible.
+   La version integree au bandeau bleu reste masquee tant qu'on n'a pas
+   atteint la largeur desktop. */
+.nav-desktop-slot { display: none; }
+
+@media (min-width: 1024px) {
+  .page {
+    max-width: 1140px;
+    box-shadow: none;   /* l'ombre "carte flottante" a du sens en colonne etroite, plus a cette largeur */
+  }
+
+  .page-content { padding: 24px 32px; }
+
+  /* La carte occupe tout l'espace vertical disponible plutot qu'une
+     hauteur fixe pensee pour un ecran de telephone. */
+  .map-container { height: 70vh; }
+
+  /* Les deux cartes de "Mon site" (Reseau ANPTIC / Reseau du batiment)
+     passent cote a cote plutot qu'empilees - voir MonSitePage.jsx. */
+/* ---- ETAGES DEPLIABLES (LanStatusCard) ---- */
+.floor-row {
+  cursor: pointer;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.floor-row-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.floor-chevron {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.floor-row.expanded .floor-chevron { transform: rotate(180deg); }
+
+.floor-equipment-list {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.floor-equipment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.floor-equipment-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.floor-equipment-dot.ok { background: var(--color-ok); }
+.floor-equipment-dot.warn { background: var(--color-warn); }
+.floor-equipment-dot.ko { background: var(--color-ko); }
+.floor-equipment-dot.unknown { background: var(--color-unknown); }
+
+.floor-equipment-name { flex: 1; font-weight: 600; }
+.floor-equipment-type { color: var(--color-text-muted); font-size: 11px; }
+  /* Bascule : on cache la barre basse mobile, on affiche la version
+     integree au bandeau bleu a la place. */
+  .nav-mobile-slot { display: none; }
+  .nav-desktop-slot { display: block; }
+
+  /* La navigation desktop reprend les memes classes (.bottom-nav, .nav-badge)
+     que la version mobile, mais restylee pour se fondre dans le bandeau
+     bleu degrade plutot que de ressembler a une barre blanche separee. */
+  .nav-desktop-slot .bottom-nav {
+    background: transparent;
+    border: none;
+    padding: 0 16px;
+    gap: 4px;
+    justify-content: flex-start;
+  }
+
+  .nav-desktop-slot .bottom-nav a {
+    flex: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    min-height: auto;
+    color: rgba(255, 255, 255, 0.75);
+    border-radius: 8px;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+
+  .nav-desktop-slot .bottom-nav a:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .nav-desktop-slot .bottom-nav a.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: white;
+  }
+
+  .nav-desktop-slot .nav-icon { font-size: 15px; }
+
+  .nav-desktop-slot .nav-badge {
+    position: static;
+    margin-left: 2px;
+  }
+}
+
+/* ---- ETAGES DEPLIABLES (LanStatusCard) ---- */
+.floor-row {
+  cursor: pointer;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.floor-row-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.floor-chevron {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.floor-row.expanded .floor-chevron { transform: rotate(180deg); }
+
+.floor-equipment-list {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.floor-equipment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.floor-equipment-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.floor-equipment-dot.ok { background: var(--color-ok); }
+.floor-equipment-dot.warn { background: var(--color-warn); }
+.floor-equipment-dot.ko { background: var(--color-ko); }
+.floor-equipment-dot.unknown { background: var(--color-unknown); }
+
+.floor-equipment-name { flex: 1; font-weight: 600; }
+.floor-equipment-type { color: var(--color-text-muted); font-size: 11px; }
+
+
+/* ==================================================================
+   RESPONSIVE CARTE ET ALERTES (poussé plus loin que le simple
+   agrandissement du conteneur .page)
+   ================================================================== */
+
+/* ---- CARTE : liste laterale, masquee par defaut (mobile/tablette) ---- */
+.map-sidebar { display: none; }
+
+/* ---- ALERTES : grille, 1 colonne par defaut (mobile/tablette) ---- */
+.alerts-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .alerts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .alerts-grid .status-card { margin-bottom: 0; }
+}
+
+@media (min-width: 1024px) {
+  .alerts-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Carte + liste cote a cote */
+  .map-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .map-sidebar {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    padding: 16px;
+    max-height: 70vh;
+  }
+
+  .map-sidebar-count {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-muted);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .map-sidebar-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .map-site-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .map-site-item:hover { background: #F5F6F8; }
+
+  .map-site-item-name { font-size: 12px; font-weight: 600; }
+  .map-site-item-ville { font-size: 11px; color: var(--color-text-muted); }
+}

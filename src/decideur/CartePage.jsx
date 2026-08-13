@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { Link } from "react-router-dom";
 import { apiGet } from "../shared/apiClient";
@@ -7,28 +7,63 @@ import { getStatusLabel } from "../shared/statusStyles";
 import DecideurLayout from "./DecideurLayout";
 
 const CENTRE_BURKINA_FASO = [12.2, -1.5];
+const INTERVALLE_ACTUALISATION_MS = 60000; // 60 s - payload plus lourd que "Mon site"
+
+function badgeClassFor(statut) {
+  if (statut === "KO") return "badge-ko";
+  if (statut === "WARN") return "badge-warn";
+  if (statut === "UNKNOWN") return "badge-unknown";
+  return "badge-ok";
+}
 
 function CartePage() {
   const [sites, setSites] = useState([]);
   const [erreur, setErreur] = useState(null);
+  const [recherche, setRecherche] = useState("");
+
+  function charger() {
+    apiGet("/api/v1/sites/map").then(setSites).catch((err) => setErreur(err.message));
+  }
 
   useEffect(() => {
-    apiGet("/api/v1/sites/map").then(setSites).catch((err) => setErreur(err.message));
+    charger();
+    const intervalle = setInterval(charger, INTERVALLE_ACTUALISATION_MS);
+    return () => clearInterval(intervalle);
   }, []);
+
+  const sitesAvecCoordonnees = useMemo(
+    () => sites.filter((site) => site.latitude != null && site.longitude != null),
+    [sites]
+  );
+
+  const sitesFiltres = useMemo(() => {
+    const texte = recherche.trim().toLowerCase();
+    if (!texte) return sitesAvecCoordonnees;
+    return sitesAvecCoordonnees.filter(
+      (site) =>
+        site.nom.toLowerCase().includes(texte) || site.ville.toLowerCase().includes(texte)
+    );
+  }, [sitesAvecCoordonnees, recherche]);
 
   return (
     <DecideurLayout>
       {erreur && <p style={{ color: "var(--color-ko)" }}>Erreur : {erreur}</p>}
 
-      <MapContainer center={CENTRE_BURKINA_FASO} zoom={7} className="map-container">
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {sites
-          .filter((site) => site.latitude != null && site.longitude != null)
-          .map((site) => (
-            <Marker key={site.siteId} position={[site.latitude, site.longitude]} icon={buildColoredMarkerIcon(site.statutGlobal)}>
+      {/* Sur mobile/tablette : uniquement la carte, pleine largeur (comportement
+          d'origine inchangé). A partir de 1024px, .map-layout devient un
+          2-colonnes carte + liste (voir index.css). */}
+      <div className="map-layout">
+        <MapContainer center={CENTRE_BURKINA_FASO} zoom={7} className="map-container">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {sitesAvecCoordonnees.map((site) => (
+            <Marker
+              key={site.siteId}
+              position={[site.latitude, site.longitude]}
+              icon={buildColoredMarkerIcon(site.statutGlobal)}
+            >
               <Popup>
                 <strong>{site.nom}</strong>
                 <br />
@@ -40,7 +75,38 @@ function CartePage() {
               </Popup>
             </Marker>
           ))}
-      </MapContainer>
+        </MapContainer>
+
+        {/* Visible uniquement a partir de 1024px (voir .map-sidebar en CSS) */}
+        <div className="map-sidebar">
+          <div className="form-field" style={{ marginBottom: "12px" }}>
+            <input
+              type="text"
+              placeholder="Rechercher un site…"
+              value={recherche}
+              onChange={(e) => setRecherche(e.target.value)}
+            />
+          </div>
+
+          <div className="map-sidebar-count">
+            {sitesFiltres.length} site{sitesFiltres.length > 1 ? "s" : ""}
+          </div>
+
+          <div className="map-sidebar-list">
+            {sitesFiltres.map((site) => (
+              <Link key={site.siteId} to={`/?site=${site.siteId}`} className="map-site-item">
+                <div>
+                  <div className="map-site-item-name">{site.nom}</div>
+                  <div className="map-site-item-ville">{site.ville}</div>
+                </div>
+                <span className={`status-badge ${badgeClassFor(site.statutGlobal)}`}>
+                  {getStatusLabel(site.statutGlobal)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
     </DecideurLayout>
   );
 }

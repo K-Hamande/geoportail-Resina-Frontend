@@ -23,11 +23,10 @@ function SiteFormPage() {
 
   // Equipements DEJA enregistres pour ce site (mode edition uniquement),
   // regroupes par etage+type pour l'affichage recapitulatif du tableau.
+  // Lecture seule ici : les equipements sont decouverts automatiquement
+  // depuis NetXMS (page "Equipements LAN"), plus question d'en creer/
+  // supprimer/modifier depuis ce formulaire.
   const [equipementsExistants, setEquipementsExistants] = useState([]);
-
-  // Nouvelles lignes de niveaux a creer, ajoutees via "+ Ajouter un niveau"
-  // avant meme d'enregistrer le site.
-  const [nouveauxNiveaux, setNouveauxNiveaux] = useState([]);
 
   const [erreur, setErreur] = useState(null);
   const [enregistrement, setEnregistrement] = useState(false);
@@ -62,23 +61,6 @@ function SiteFormPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-function ajouterNiveau() {
-    setNouveauxNiveaux((prev) => [
-      ...prev,
-      { id: Date.now(), etageLabel: "", libelleAffiche: "", type: "BORNE_WIFI", nombre: 1, netxmsObjectId: "" },
-    ]);
-  }
-
-  function modifierNiveau(id, champ, valeur) {
-    setNouveauxNiveaux((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, [champ]: valeur } : n))
-    );
-  }
-
-  function retirerNiveau(id) {
-    setNouveauxNiveaux((prev) => prev.filter((n) => n.id !== id));
-  }
-
   // Regroupe les equipements existants par (etage, type) pour afficher
   // un recapitulatif compact plutot qu'une ligne par appareil individuel
   // (le detail appareil par appareil reste gere sur la page "Equipements LAN").
@@ -108,32 +90,6 @@ function ajouterNiveau() {
       };
 
       await adminPost("/backoffice/api/v1/sites", getAuthHeader(), payload);
-
-      // Pour chaque niveau ajoute, on cree "nombre" equipements individuels
-      // (un appel API par appareil). Promise.all lance toutes les creations
-      // d'un meme niveau en parallele.
-      for (const niveau of nouveauxNiveaux) {
-        const baseNetxmsId = niveau.netxmsObjectId === "" ? null : parseInt(niveau.netxmsObjectId, 10);
-
-        const creations = Array.from({ length: Number(niveau.nombre) || 1 }, (_, index) => {
-          const libelle = Number(niveau.nombre) > 1
-            ? `${niveau.libelleAffiche} ${index + 1}`
-            : niveau.libelleAffiche;
-
-          // Si un ID de base est fourni et qu'on cree plusieurs
-          // equipements, on incremente pour eviter que 2 objets
-          // physiques distincts partagent le meme identifiant NetXMS.
-          const netxmsObjectId = baseNetxmsId === null ? null : baseNetxmsId + index;
-
-          return adminPost(`/backoffice/api/v1/sites/${form.siteId}/equipments`, getAuthHeader(), {
-            etageLabel: niveau.etageLabel,
-            type: niveau.type,
-            libelleAffiche: libelle,
-            netxmsObjectId,
-          });
-        });
-        await Promise.all(creations);
-      }
 
       navigate("/backoffice/sites");
     } catch (err) {
@@ -221,103 +177,42 @@ function ajouterNiveau() {
           </div>
         </div>
 
-        <div className="panel">
-          <h2 style={{ fontSize: "15px", marginBottom: "16px" }}>Équipements LAN par étage</h2>
+        {isEdition && (
+          <div className="panel">
+            <h2 style={{ fontSize: "15px", marginBottom: "16px" }}>Équipements LAN par étage</h2>
 
-          {(recapitulatifExistant.length > 0 || nouveauxNiveaux.length > 0) && (
-            <table className="admin-table" style={{ marginBottom: "16px" }}>
-<thead>
-                <tr>
-                  <th>Étage</th>
-                  <th>Libellé affiché</th>
-                  <th>Type principal</th>
-                  <th>ID objet NetXMS</th>
-                  <th>Nb équipements</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {recapitulatifExistant.map((r) => (
-                  <tr key={`existant-${r.etageLabel}-${r.type}`}>
-                    <td>{r.etageLabel}</td>
-                    <td>{r.libelleAffiche}</td>
-                    <td>{TYPE_LABELS[r.type] ?? r.type}</td>
-                    <td>{r.nombre}</td>
-                    <td><span className="status-badge badge-ok">Déjà enregistré</span></td>
+            {recapitulatifExistant.length > 0 ? (
+              <table className="admin-table" style={{ marginBottom: "16px" }}>
+                <thead>
+                  <tr>
+                    <th>Étage</th>
+                    <th>Libellé affiché</th>
+                    <th>Type principal</th>
+                    <th>Nb équipements</th>
                   </tr>
-                ))}
+                </thead>
+                <tbody>
+                  {recapitulatifExistant.map((r) => (
+                    <tr key={`existant-${r.etageLabel}-${r.type}`}>
+                      <td>{r.etageLabel ?? "Non assigné"}</td>
+                      <td>{r.libelleAffiche}</td>
+                      <td>{TYPE_LABELS[r.type] ?? r.type}</td>
+                      <td>{r.nombre}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Aucun équipement synchronisé pour ce site pour l'instant.</p>
+            )}
 
-                {nouveauxNiveaux.map((n) => (
-                  <tr key={n.id}>
-                    <td>
-                      <input
-                        className="inline-input"
-                        placeholder="ex: R+1"
-                        value={n.etageLabel}
-                        onChange={(e) => modifierNiveau(n.id, "etageLabel", e.target.value)}
-                        required
-                      />
-                    </td>
-                    <td>
-                      <input
-                        className="inline-input"
-                        placeholder="ex: Premier étage"
-                        value={n.libelleAffiche}
-                        onChange={(e) => modifierNiveau(n.id, "libelleAffiche", e.target.value)}
-                        required
-                      />
-                    </td>
-                    <td>
-                      <select
-                        className="inline-input"
-                        value={n.type}
-                        onChange={(e) => modifierNiveau(n.id, "type", e.target.value)}
-                      >
-                        <option value="BORNE_WIFI">Borne Wi-Fi</option>
-                        <option value="COMMUTATEUR">Commutateur</option>
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        className="inline-input"
-                        type="number"
-                        placeholder="ex: 10424"
-                        value={n.netxmsObjectId}
-                        onChange={(e) => modifierNiveau(n.id, "netxmsObjectId", e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        className="inline-input"
-                        type="number"
-                        min="1"
-                        style={{ width: "70px" }}
-                        value={n.nombre}
-                        onChange={(e) => modifierNiveau(n.id, "nombre", e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <button type="button" className="btn btn-danger" style={{ color: "white" }} onClick={() => retirerNiveau(n.id)}>
-                        Retirer
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          <button type="button" className="btn-outline" onClick={ajouterNiveau}>
-            + Ajouter un niveau
-          </button>
-
-          {isEdition && (
-            <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "12px" }}>
-              Pour modifier ou supprimer un équipement individuel déjà enregistré, rendez-vous sur la page{" "}
-              <Link to="/backoffice/equipments">Équipements LAN</Link>.
+            <p style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+              Les équipements sont découverts automatiquement depuis NetXMS et ne se créent plus
+              manuellement. Pour synchroniser ou assigner un étage à un équipement, rendez-vous sur la
+              page <Link to="/backoffice/equipments">Équipements LAN</Link>.
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="form-footer-actions">
           <Link to="/backoffice/sites" className="btn-secondary" style={{ textDecoration: "none" }}>

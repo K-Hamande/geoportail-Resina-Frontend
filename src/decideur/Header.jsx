@@ -1,4 +1,4 @@
-function Header({ children }) {
+function Header({ nav, children }) {
   return (
     <header className="app-header">
       <div className="flag-bar"></div>
@@ -13,6 +13,7 @@ function Header({ children }) {
           EN DIRECT
         </div>
       </div>
+      {nav}
       {children}
     </header>
   );

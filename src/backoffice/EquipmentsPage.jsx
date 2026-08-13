@@ -10,6 +10,7 @@ function EquipmentsPage() {
   const { getAuthHeader } = useAuth();
   const [sites, setSites] = useState([]);
   const [siteId, setSiteId] = useState(null);
+  const [recherche, setRecherche] = useState("");
   const [equipments, setEquipments] = useState([]);
   const [erreur, setErreur] = useState(null);
   const [synchronisation, setSynchronisation] = useState(false);
@@ -74,6 +75,30 @@ function EquipmentsPage() {
 
   const typeLabels = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
 
+  // Filtre insensible a la casse sur le nom ou la ville - evite de faire
+  // defiler 1652 sites dans le menu deroulant.
+  const sitesFiltres = sites.filter((site) => {
+    const texte = recherche.trim().toLowerCase();
+    if (!texte) return true;
+    return (
+      site.nom.toLowerCase().includes(texte) ||
+      site.ville.toLowerCase().includes(texte)
+    );
+  });
+
+  // Si le site actuellement selectionne sort du filtre (recherche tapee),
+  // le <select> affiche silencieusement une autre option sans mettre a
+  // jour l'etat siteId (comportement natif du <select> HTML quand la
+  // "value" controlee ne correspond plus a aucune <option> visible) - on
+  // force ici la synchronisation pour eviter ce decalage affichage/etat.
+  useEffect(() => {
+    if (sitesFiltres.length === 0) return;
+    const siteEncoreVisible = sitesFiltres.some((s) => s.siteId === siteId);
+    if (!siteEncoreVisible) {
+      setSiteId(sitesFiltres[0].siteId);
+    }
+  }, [recherche, sites]);
+
   return (
     <>
       <Topbar
@@ -89,9 +114,19 @@ function EquipmentsPage() {
         <div className="panel">
           <div className="panel-header">
             <div className="form-field" style={{ maxWidth: "320px", marginBottom: 0 }}>
-              <label>Site</label>
+              <label>Rechercher un site</label>
+              <input
+                type="text"
+                placeholder="Nom ou ville…"
+                value={recherche}
+                onChange={(e) => setRecherche(e.target.value)}
+              />
+            </div>
+            <div className="form-field" style={{ maxWidth: "320px", marginBottom: 0 }}>
+              <label>Site ({sitesFiltres.length} résultat{sitesFiltres.length > 1 ? "s" : ""})</label>
               <select value={siteId || ""} onChange={(e) => setSiteId(e.target.value)}>
-                {sites.map((site) => (
+                {sitesFiltres.length === 0 && <option value="">Aucun résultat</option>}
+                {sitesFiltres.map((site) => (
                   <option key={site.siteId} value={site.siteId}>
                     {site.nom} — {site.ville}
                   </option>

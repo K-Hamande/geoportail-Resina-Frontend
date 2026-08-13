@@ -7,6 +7,8 @@ import SiteSelector from "./SiteSelector";
 import AnpticStatusCard from "./AnpticStatusCard";
 import LanStatusCard from "./LanStatusCard";
 
+const INTERVALLE_ACTUALISATION_MS = 30000; // 30 s
+
 function MonSitePage() {
   const [sites, setSites] = useState([]);
   const [siteId, setSiteId] = useState(null);
@@ -41,6 +43,14 @@ function MonSitePage() {
 
   useEffect(() => {
     chargerStatuts();
+  }, [chargerStatuts]);
+
+  // Actualisation automatique en temps reel - se recale automatiquement
+  // si l'utilisateur change de site en cours de route (grace a la
+  // dependance sur chargerStatuts, elle-meme dependante de siteId).
+  useEffect(() => {
+    const intervalle = setInterval(chargerStatuts, INTERVALLE_ACTUALISATION_MS);
+    return () => clearInterval(intervalle);
   }, [chargerStatuts]);
 
   return (

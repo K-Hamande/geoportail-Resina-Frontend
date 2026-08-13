@@ -1,16 +1,10 @@
-import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { apiGet } from "../shared/apiClient";
 
-function BottomNav() {
-  const [alertCount, setAlertCount] = useState(0);
-
-  useEffect(() => {
-    apiGet("/api/v1/sites/map")
-      .then((sites) => setAlertCount(sites.filter((s) => s.statutGlobal !== "OK").length))
-      .catch(() => {});
-  }, []);
-
+// Le compteur d'alertes est desormais fourni par le parent (DecideurLayout)
+// plutot que recupere ici via API - ce composant est rendu DEUX FOIS
+// (version mobile + version desktop integree au bandeau bleu), un seul
+// appel API partage evite de le declencher deux fois pour rien.
+function BottomNav({ alertCount = 0 }) {
   const linkClass = ({ isActive }) => (isActive ? "active" : "");
 
   return (

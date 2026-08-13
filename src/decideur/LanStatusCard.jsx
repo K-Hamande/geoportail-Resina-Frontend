@@ -1,14 +1,30 @@
-import { getStatusLabel } from "../shared/statusStyles";
+import { useState } from "react";
 
 function classFor(status) {
   if (status === "KO") return "ko";
   if (status === "WARN") return "warn";
+  if (status === "UNKNOWN") return "unknown";
   return "ok";
 }
 
+const TYPE_LABELS = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
+
 function LanStatusCard({ data }) {
+  // Ensemble des noms d'etage actuellement deplies - un Set permet
+  // d'avoir plusieurs etages ouverts en meme temps sans se marcher dessus.
+  const [etagesOuverts, setEtagesOuverts] = useState(new Set());
+
   if (!data) {
     return <div className="status-card">Chargement...</div>;
+  }
+
+  function basculerEtage(nom) {
+    setEtagesOuverts((prev) => {
+      const suivant = new Set(prev);
+      if (suivant.has(nom)) suivant.delete(nom);
+      else suivant.add(nom);
+      return suivant;
+    });
   }
 
   const badgeClass = data.globalStatus === "KO" ? "badge-ko" : data.globalStatus === "WARN" ? "badge-warn" : "badge-ok";
@@ -42,15 +58,38 @@ function LanStatusCard({ data }) {
 
       <div className="floors-title">État par niveau</div>
 
-      {data.etats.map((etage) => (
-        <div key={etage.etage} className={`floor-row ${classFor(etage.status)}`}>
-          <span className={`floor-dot ${classFor(etage.status)}`}></span>
-          <div>
-            <div className="floor-name">{etage.etage}</div>
-            <div className="floor-detail">{etage.detail}</div>
+      {data.etats.map((etage) => {
+        const ouvert = etagesOuverts.has(etage.etage);
+
+        return (
+          <div
+            key={etage.etage}
+            className={`floor-row ${classFor(etage.status)} ${ouvert ? "expanded" : ""}`}
+            onClick={() => basculerEtage(etage.etage)}
+          >
+            <div className="floor-row-header">
+              <span className={`floor-dot ${classFor(etage.status)}`}></span>
+              <div>
+                <div className="floor-name">{etage.etage}</div>
+                <div className="floor-detail">{etage.detail}</div>
+              </div>
+              <span className="floor-chevron">▼</span>
+            </div>
+
+            {ouvert && (
+              <div className="floor-equipment-list" onClick={(e) => e.stopPropagation()}>
+                {etage.equipements.map((eq) => (
+                  <div key={eq.id} className="floor-equipment-item">
+                    <span className={`floor-equipment-dot ${classFor(eq.status)}`}></span>
+                    <span className="floor-equipment-name">{eq.libelleAffiche}</span>
+                    <span className="floor-equipment-type">{TYPE_LABELS[eq.type] ?? eq.type}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {data.actionMessage && (
         <div className="action-box">
