@@ -1,23 +1,17 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../shared/apiClient";
+import { useSiteSelection } from "../shared/SiteSelectionContext";
 import Header from "./Header";
 import Footer from "./Footer";
 import BottomNav from "./BottomNav";
+import SiteSelector from "./SiteSelector";
 
-// Regroupe la structure commune aux 3 pages Decideur (en-tete, pied de
-// page, navigation), pour ne l'ecrire qu'une seule fois.
-// "headerExtra" permet d'inserer un contenu specifique DANS le bandeau
-// bleu (ex: le selecteur de site sur "Mon site").
-//
-// La navigation est rendue DEUX FOIS :
-//  - .nav-desktop-slot : integree au bandeau bleu, visible a partir de
-//    1024px (voir index.css)
-//  - .nav-mobile-slot  : barre basse classique, visible en dessous
-// Seule une des deux est affichee a la fois (CSS), jamais les deux en
-// meme temps. Le compteur d'alertes est recupere UNE SEULE FOIS ici et
-// partage entre les deux affichages.
-function DecideurLayout({ headerExtra, children }) {
+// Regroupe la structure commune aux 3 pages Decideur. Le selecteur de
+// site est desormais TOUJOURS affiche dans le header (avant : uniquement
+// sur "Mon site"), alimente par le contexte partage SiteSelectionContext.
+function DecideurLayout({ children }) {
   const [alertCount, setAlertCount] = useState(0);
+  const { sites, siteId, choisirSite } = useSiteSelection();
 
   useEffect(() => {
     apiGet("/api/v1/sites/map")
@@ -31,9 +25,11 @@ function DecideurLayout({ headerExtra, children }) {
     </div>
   );
 
+  const selecteur = <SiteSelector sites={sites} siteId={siteId} onChange={choisirSite} />;
+
   return (
     <div className="page">
-      <Header nav={navDesktop}>{headerExtra}</Header>
+      <Header nav={navDesktop}>{selecteur}</Header>
       <div className="page-content">{children}</div>
       <Footer />
       <div className="nav-mobile-slot">

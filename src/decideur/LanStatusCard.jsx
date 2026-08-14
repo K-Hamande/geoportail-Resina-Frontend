@@ -9,11 +9,6 @@ function classFor(status) {
 
 const TYPE_LABELS = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
 
-// Ne garde que les chiffres d'un numero de telephone. Si le numero est au
-// format local burkinabe (8 chiffres, commence par 0), on le convertit au
-// format international requis par WhatsApp (indicatif 226, sans le 0).
-// Hypothese raisonnable pour ce projet ; a ajuster si des contacts DSI
-// utilisent un indicatif different.
 function normaliserNumero(numero) {
   if (!numero) return null;
   const chiffres = numero.replace(/\D/g, "");
@@ -22,9 +17,6 @@ function normaliserNumero(numero) {
   return chiffres;
 }
 
-// Fonction nommee plutot qu'une fleche inline dans onClick - evite tout
-// souci avec le nouveau moteur de transformation JSX de Vite sur ce
-// pattern precis.
 function ignorerClicParent(event) {
   event.stopPropagation();
 }
@@ -76,8 +68,6 @@ function ContactDsiPanel(props) {
 }
 
 function LanStatusCard({ data }) {
-  // Ensemble des noms d'etage actuellement deplies - un Set permet
-  // d'avoir plusieurs etages ouverts en meme temps sans se marcher dessus.
   const [etagesOuverts, setEtagesOuverts] = useState(new Set());
 
   if (!data) {
@@ -95,6 +85,31 @@ function LanStatusCard({ data }) {
 
   const badgeClass = data.globalStatus === "KO" ? "badge-ko" : data.globalStatus === "WARN" ? "badge-warn" : "badge-ok";
   const badgeText = data.globalStatus === "KO" ? "✕ Incident" : data.globalStatus === "WARN" ? "⚠ Alerte" : "✓ Normal";
+
+  // Aucun equipement LAN synchronise pour ce site : afficher un vrai etat
+  // vide plutot que 3 compteurs a "0" qui ressemblent a une erreur.
+  if (data.equipementsTotal === 0) {
+    return (
+      <div className="status-card">
+        <div className="card-top">
+          <div className="card-icon">🏢</div>
+          <div className="card-titles">
+            <div className="card-title">Réseau du bâtiment</div>
+            <div className="card-subtitle">LAN interne — Wi-Fi &amp; commutateurs</div>
+          </div>
+        </div>
+
+        <div className="lan-empty-state">
+          <div className="lan-empty-icon">🔌</div>
+          <p className="lan-empty-title">Aucun équipement LAN synchronisé</p>
+          <p className="lan-empty-text">
+            Ce site n'a pas encore d'équipements Wi-Fi/commutateurs découverts depuis NetXMS,
+            ou ils n'ont pas encore été rattachés à ce site dans le backoffice.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="status-card">

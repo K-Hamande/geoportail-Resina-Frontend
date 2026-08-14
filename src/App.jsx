@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./shared/AuthContext";
+import { SiteSelectionProvider } from "./shared/SiteSelectionContext";
 import MonSitePage from "./decideur/MonSitePage";
 import CartePage from "./decideur/CartePage";
 import AlertesPage from "./decideur/AlertesPage";
@@ -15,21 +16,30 @@ import UsersPage from "./backoffice/UsersPage";
 import AuditLogPage from "./backoffice/AuditLogPage";
 import SiteFormPage from "./backoffice/SiteFormPage";
 
+// Regroupe les 3 pages decideur pour qu'elles partagent toutes le meme
+// contexte de selection de site (header commun avec selecteur toujours
+// disponible) - le Provider a besoin d'etre A L'INTERIEUR du
+// BrowserRouter car il utilise useNavigate/useSearchParams.
+function DecideurRoutes() {
+  return (
+    <SiteSelectionProvider>
+      <Routes>
+        <Route path="/" element={<MonSitePage />} />
+        <Route path="/carte" element={<CartePage />} />
+        <Route path="/alertes" element={<AlertesPage />} />
+      </Routes>
+    </SiteSelectionProvider>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<MonSitePage />} />
-          <Route path="/carte" element={<CartePage />} />
-          <Route path="/alertes" element={<AlertesPage />} />
-
+          <Route path="/*" element={<DecideurRoutesGuard />} />
           <Route path="/backoffice/login" element={<LoginPage />} />
 
-          {/* Route PARENT : protege l'acces (ProtectedRoute) et affiche
-              le layout commun (BackofficeLayout). Les routes ENFANTS,
-              declarees juste en dessous avec une indentation JSX,
-              s'affichent a l'interieur du <Outlet /> du layout. */}
           <Route
             path="/backoffice"
             element={
@@ -38,8 +48,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* "index" = la route affichee quand l'URL est EXACTEMENT
-                "/backoffice", sans rien apres. */}
             <Route index element={<DashboardPage />} />
             <Route path="sites" element={<SitesPage />} />
             <Route path="equipments" element={<EquipmentsPage />} />
@@ -54,6 +62,16 @@ function App() {
       </BrowserRouter>
     </AuthProvider>
   );
+}
+
+// Petit garde-fou : "/backoffice/*" ne doit jamais tomber dans les
+// routes decideur (qui ne connaissent que "/", "/carte", "/alertes").
+// React Router evalue les <Route> dans l'ordre : comme "/backoffice/login"
+// et "/backoffice" sont declares AVANT "/*" dans <Routes> ci-dessus,
+// ils sont deja pris en priorite - ce composant ne gere donc que le
+// reste ("/", "/carte", "/alertes", et tout chemin decideur inconnu).
+function DecideurRoutesGuard() {
+  return <DecideurRoutes />;
 }
 
 export default App;

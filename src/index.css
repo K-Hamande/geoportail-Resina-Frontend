@@ -15,7 +15,7 @@
   --color-border: #E5E7EB;
   
 
-  --font-main: "Segoe UI", system-ui, -apple-system, sans-serif;
+--font-main: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;  
   --font-mono: "Consolas", "Courier New", monospace;
 }
 
@@ -87,8 +87,17 @@ body {
   white-space: nowrap;
 }
 
-.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); }
-
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok);
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(13, 155, 90, 0.6); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 5px rgba(13, 155, 90, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+}
 .selector-box {
   margin: 8px 16px 16px;
   background: rgba(255, 255, 255, 0.08);
@@ -1872,4 +1881,147 @@ body {
     height: auto;
     overflow: visible;
   }
+}
+
+/* ==================================================================
+   DECIDEUR : POLISH DESKTOP / TABLETTE
+   Va au-dela du simple elargissement : espace mieux utilise, hierarchie
+   typographique plus marquee, etat vide propre pour le LAN.
+   ================================================================== */
+
+/* ---- Etat vide LAN (0 equipement) ---- */
+.lan-empty-state {
+  text-align: center;
+  padding: 32px 16px;
+}
+.lan-empty-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
+.lan-empty-title { font-weight: 700; font-size: 14px; margin: 0 0 6px; color: var(--color-text); }
+.lan-empty-text { font-size: 12px; color: var(--color-text-muted); max-width: 360px; margin: 0 auto; }
+
+@media (min-width: 768px) {
+  /* Un peu plus d'air sur tablette deja, avant le vrai palier desktop */
+  .status-card { padding: 24px; }
+  .card-title { font-size: 16px; }
+}
+
+@media (min-width: 1024px) {
+  .page { max-width: 1240px; }
+  .page-content { padding: 32px 40px; }
+
+  /* Cartes plus respirees, coins plus doux, legere ombre pour donner
+     de la profondeur sur un fond large */
+  .status-card {
+    padding: 28px 32px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(16, 32, 61, 0.06);
+    margin-bottom: 20px;
+  }
+
+  .card-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .card-title { font-size: 18px; }
+  .card-subtitle { font-size: 13px; }
+
+  /* Compteurs plus grands, plus lisibles a distance (ecran partage en
+     reunion, projection...) */
+  .counters-row { gap: 16px; }
+  .counter-box { padding: 20px 16px; border-radius: 12px; }
+  .counter-value { font-size: 28px; }
+  .counter-label { font-size: 12px; }
+
+  .floor-row { padding: 14px 16px; border-radius: 10px; }
+  .floor-name { font-size: 14px; }
+  .floor-detail { font-size: 12.5px; }
+
+  /* Le panneau "Action requise" doit rester lisible meme en colonne
+     etroite (1/4) - largeur minimale garantie pour eviter l'ecrasement
+     visuel observe sur tres large ecran. */
+  .lan-split { gap: 24px; }
+  .lan-floors-col { flex: 3; }
+  .lan-action-col {
+    flex: 1;
+    min-width: 260px;
+    border-radius: 12px;
+    padding: 20px;
+    align-self: stretch;
+  }
+  .lan-contact-buttons { flex-direction: column; }
+  .lan-contact-btn { min-height: 42px; }
+
+  /* Selecteur de site : texte plus grand, plus a l'aise sur large bandeau */
+  .site-select-trigger { font-size: 17px; }
+
+  /* Interactions plus visibles au survol (souris disponible sur desktop) */
+  .floor-row:hover { background: rgba(0, 0, 0, 0.02); cursor: pointer; }
+  .map-site-item, .site-select-item { transition: background 0.15s; }
+}
+
+@media (min-width: 1440px) {
+  .page { max-width: 1360px; }
+}
+
+/* ==================================================================
+   HEADER DECIDEUR : barre compacte unifiee a partir de 1024px
+   (au lieu de 3 blocs empiles : logo/titre, navigation, selecteur)
+   ================================================================== */
+
+@media (min-width: 1024px) {
+  .header-main-row {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 14px 32px;
+  }
+
+  .header-top {
+    padding: 0;
+    flex: 0 0 auto;
+  }
+
+  .header-icon { width: 40px; height: 40px; font-size: 17px; }
+  .header-title { font-size: 17px; }
+  .header-subtitle { font-size: 11.5px; }
+
+  .live-badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+  }
+
+  /* La navigation (deja re-stylee pour se fondre dans le bandeau, voir
+     regles .nav-desktop-slot existantes) reste centree entre le logo
+     et le selecteur de site. */
+.nav-desktop-slot { flex: 1; display: flex; justify-content: center; }
+  .nav-desktop-slot .bottom-nav { justify-content: center; }
+
+  .selector-box {
+    margin: 0;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 300px;
+    max-width: 420px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .selector-label { font-size: 9px; }
+  .site-select-trigger { font-size: 14px; }
+
+  .site-select-panel {
+    top: calc(100% + 10px);
+    right: 0;
+    left: auto;
+    width: 380px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .header-main-row { padding: 16px 40px; }
+}
+
+@media (min-width: 1440px) {
+  .selector-box { min-width: 360px; max-width: 480px; }
 }
