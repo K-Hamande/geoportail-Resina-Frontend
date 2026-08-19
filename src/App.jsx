@@ -15,7 +15,9 @@ import NotificationsAdminPage from "./backoffice/NotificationsAdminPage";
 import UsersPage from "./backoffice/UsersPage";
 import AuditLogPage from "./backoffice/AuditLogPage";
 import MinistryTokensPage from "./backoffice/MinistryTokensPage";
+import SupervisionPage from "./backoffice/SupervisionPage";
 import SiteFormPage from "./backoffice/SiteFormPage";
+
 
 // Regroupe les 3 pages decideur pour qu'elles partagent toutes le meme
 // contexte de selection de site (header commun avec selecteur toujours
@@ -57,7 +59,8 @@ function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="audit-log" element={<AuditLogPage />} />
             <Route path="ministry-tokens" element={<MinistryTokensPage />} />
-             <Route path="sites/new" element={<SiteFormPage />} />
+            <Route path="supervision" element={<SupervisionPage />} />
+            <Route path="sites/new" element={<SiteFormPage />} />
             <Route path="sites/:siteId/edit" element={<SiteFormPage />} />
           </Route>
         </Routes>

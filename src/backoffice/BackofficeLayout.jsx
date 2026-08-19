@@ -48,7 +48,7 @@ function BackofficeLayout() {
 
           <div className="sidebar-section-title">Configuration</div>
           <NavLink to="/backoffice/cartography" className={linkClass}><span className="sidebar-link-icon">🗺️</span>Cartographie</NavLink>
-<NavLink to="/backoffice/notifications" className={linkClass}><span className="sidebar-link-icon">🔔</span>Notifications push</NavLink>
+          <NavLink to="/backoffice/supervision" className={linkClass}><span className="sidebar-link-icon">🎛️</span>Paramètres supervision</NavLink><NavLink to="/backoffice/notifications" className={linkClass}><span className="sidebar-link-icon">🔔</span>Notifications push</NavLink>
           <NavLink to="/backoffice/ministry-tokens" className={linkClass}><span className="sidebar-link-icon">🔗</span>Liens Ministères</NavLink>
           <div className="sidebar-section-title">Administration</div>
           <NavLink to="/backoffice/users" className={linkClass}><span className="sidebar-link-icon">👤</span>Utilisateurs</NavLink>
