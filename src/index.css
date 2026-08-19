@@ -2025,3 +2025,87 @@ body {
 @media (min-width: 1440px) {
   .selector-box { min-width: 360px; max-width: 480px; }
 }
+
+/* ==================================================================
+   PAGE DE CONNEXION BACKOFFICE — logo de fond, toggle mot de passe,
+   se souvenir de moi
+   ================================================================== */
+
+.login-page { position: relative; overflow: hidden; }
+
+/* Logo ANPTIC en filigrane discret, centré en fond */
+.login-bg-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 620px;
+  max-width: 90vw;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* La carte doit passer au-dessus du filigrane */
+.login-card { position: relative; z-index: 1; }
+
+/* L'icône contient maintenant un SVG (drapeau) : on enlève le fond doré
+   et le centrage de texte hérités de l'ancien "R", on arrondit le SVG. */
+.login-icon {
+  background: none;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-icon svg { border-radius: 10px; display: block; }
+
+/* Champ mot de passe + bouton œil superposé */
+.login-password-wrapper { position: relative; }
+.login-password-wrapper .login-input { padding-right: 44px; width: 100%; box-sizing: border-box; }
+
+.login-password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  line-height: 1;
+}
+
+/* Case "Se souvenir de moi" */
+.login-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #5B6478;
+  margin-top: 14px;
+  cursor: pointer;
+}
+.login-remember input { cursor: pointer; }
+
+.login-page {
+  position: relative;
+  overflow: hidden;
+  background: #f4f6fb; /* fond clair, remplace le bleu uni */
+}
+
+.login-bg-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 620px;
+  max-width: 90vw;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-card { position: relative; z-index: 1; }
