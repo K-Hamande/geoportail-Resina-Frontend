@@ -1,59 +1,120 @@
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import { useAuth } from "../shared/AuthContext";
+import { useOutletContext } from "react-router-dom";
 import { adminGet, adminPut } from "../shared/backofficeApiClient";
 import { buildColoredMarkerIcon } from "../shared/mapMarkers";
-import LocationPicker from "./LocationPicker";
-import Topbar from "./Topbar";
 
 const CENTRE_BURKINA_FASO = [12.2, -1.5];
+const TAILLE_PAGE = 20;
+
+// Composant interne : ecoute les clics sur la carte et transmet les
+// coordonnees au parent via onPick - beaucoup plus intuitif que l'ancien
+// LocationPicker qui necessitait un mode "edition" separe.
+function ClickHandler({ onPick, actif }) {
+  useMapEvents({
+    click(e) {
+      if (actif) onPick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+function clean(s) {
+  return s ? s.trim().replace(/[\r\n]/g, "") : s;
+}
 
 function CartographyPage() {
+  const { auth, setReduit, reduit } = useOutletContext();
   const { getAuthHeader } = useAuth();
-  const [items, setItems] = useState([]);
-  const [siteId, setSiteId] = useState(null);
-  const [recherche, setRecherche] = useState("");
-  const [seulementAPositionner, setSeulementAPositionner] = useState(false);
-  const [erreur, setErreur] = useState(null);
-  const [succes, setSucces] = useState(false);
-  const [enregistrement, setEnregistrement] = useState(false);
-  const [brouillon, setBrouillon] = useState({ latitude: null, longitude: null, infoAuSurvol: "" });
 
-  function charger() {
-    adminGet("/backoffice/api/v1/cartography", getAuthHeader())
-      .then((data) => {
-        setItems(data);
-        if (data.length > 0 && !siteId) setSiteId(data[0].siteId);
-      })
-      .catch((err) => setErreur(err.message));
+  const [items, setItems] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [siteId, setSiteId] = useState(null);
+  const [brouillon, setBrouillon] = useState({ latitude: null, longitude: null, infoAuSurvol: "" });
+  const [modePositionnement, setModePositionnement] = useState(false);
+  const [erreur, setErreur] = useState(null);
+  const [succes, setSucces] = useState(null);
+  const [enregistrement, setEnregistrement] = useState(false);
+
+  // Filtres en cascade
+  const [filtreRegion, setFiltreRegion] = useState("");
+  const [filtreProvince, setFiltreProvince] = useState("");
+  const [filtreVille, setFiltreVille] = useState("");
+  const [filtreMinistere, setFiltreMinistere] = useState("");
+  const [filtreStatut, setFiltreStatut] = useState(""); // "positionne" | "non_positionne" | ""
+  const [recherche, setRecherche] = useState("");
+  const [pageCourante, setPageCourante] = useState(1);
+
+  // Listes dependantes
+  const [provinces, setProvinces] = useState([]);
+  const [villes, setVilles] = useState([]);
+
+  const nomAdmin = (auth?.username || "admin").split(".")[0].toUpperCase();
+  const initiales = nomAdmin.substring(0, 2);
+
+  async function charger() {
+    try {
+      const [cartData, statsData] = await Promise.all([
+        adminGet("/backoffice/api/v1/cartography", getAuthHeader()),
+        adminGet("/backoffice/api/v1/equipments/stats", getAuthHeader()),
+      ]);
+      setItems(cartData);
+      setStats(statsData);
+      setProvinces(statsData.provinces || []);
+      setVilles(statsData.villes || []);
+    } catch (err) {
+      setErreur(err.message);
+    }
   }
 
-  useEffect(() => {
-    charger();
-  }, []);
+  useEffect(() => { charger(); }, []);
 
   useEffect(() => {
     const item = items.find((i) => i.siteId === siteId);
     if (item) {
       setBrouillon({ latitude: item.latitude, longitude: item.longitude, infoAuSurvol: item.infoAuSurvol ?? "" });
     }
-    setSucces(false);
+    setSucces(null);
+    setModePositionnement(false);
   }, [siteId, items]);
 
-  const itemsFiltres = useMemo(() => {
-    const texte = recherche.trim().toLowerCase();
-    return items.filter((item) => {
-      if (seulementAPositionner && item.positionne) return false;
-      if (!texte) return true;
-      return item.nom.toLowerCase().includes(texte);
-    });
-  }, [items, recherche, seulementAPositionner]);
+  async function onRegionChange(region) {
+    setFiltreRegion(region);
+    setFiltreProvince("");
+    setFiltreVille("");
+    setPageCourante(1);
+    if (region) {
+      const data = await adminGet(
+        `/backoffice/api/v1/equipments/cascade?niveau=provinces&region=${encodeURIComponent(region)}`,
+        getAuthHeader()
+      ).catch(() => []);
+      setProvinces(data);
+      setVilles([]);
+    } else {
+      setProvinces(stats?.provinces || []);
+      setVilles(stats?.villes || []);
+    }
+  }
 
-  const sitePositionnes = items.filter((i) => i.latitude != null && i.longitude != null);
+  async function onProvinceChange(province) {
+    setFiltreProvince(province);
+    setFiltreVille("");
+    setPageCourante(1);
+    if (province) {
+      const data = await adminGet(
+        `/backoffice/api/v1/equipments/cascade?niveau=villes&province=${encodeURIComponent(province)}`,
+        getAuthHeader()
+      ).catch(() => []);
+      setVilles(data);
+    } else {
+      setVilles(stats?.villes || []);
+    }
+  }
 
   async function enregistrer() {
     setErreur(null);
-    setSucces(false);
+    setSucces(null);
     setEnregistrement(true);
     try {
       await adminPut(`/backoffice/api/v1/sites/${siteId}/cartography`, getAuthHeader(), {
@@ -61,7 +122,8 @@ function CartographyPage() {
         longitude: brouillon.longitude,
         infoAuSurvol: brouillon.infoAuSurvol,
       });
-      setSucces(true);
+      setSucces("Position enregistrée avec succès.");
+      setModePositionnement(false);
       charger();
     } catch (err) {
       setErreur(err.message);
@@ -90,130 +152,285 @@ function CartographyPage() {
     URL.revokeObjectURL(url);
   }
 
+  // Filtrage de la liste
+  const itemsFiltres = useMemo(() => {
+    return items.filter((item) => {
+      if (filtreRegion && item.regionAdministrative !== filtreRegion) return false;
+      if (filtreProvince && item.province !== filtreProvince) return false;
+      if (filtreVille && clean(item.ville) !== clean(filtreVille)) return false;
+      if (filtreMinistere && item.ministere !== filtreMinistere) return false;
+      if (filtreStatut === "positionne" && !item.positionne) return false;
+      if (filtreStatut === "non_positionne" && item.positionne) return false;
+      if (recherche) {
+        const t = recherche.trim().toLowerCase();
+        return item.nom.toLowerCase().includes(t) || (item.ville || "").toLowerCase().includes(t);
+      }
+      return true;
+    });
+  }, [items, filtreRegion, filtreProvince, filtreVille, filtreMinistere, filtreStatut, recherche]);
+
+  // Stats positionnement
+  const nbPositionnes = items.filter((i) => i.positionne).length;
+  const nbTotal = items.length;
+  const pctPositionnes = nbTotal > 0 ? ((nbPositionnes / nbTotal) * 100).toFixed(1) : "0";
+
+  // Pagination liste
+  const totalPages = Math.max(1, Math.ceil(itemsFiltres.length / TAILLE_PAGE));
+  const pageActuelle = Math.min(pageCourante, totalPages);
+  const debut = (pageActuelle - 1) * TAILLE_PAGE;
+  const itemsPage = itemsFiltres.slice(debut, debut + TAILLE_PAGE);
+
   const siteSelectionne = items.find((i) => i.siteId === siteId);
   const centreCarte = brouillon.latitude != null && brouillon.longitude != null
     ? [brouillon.latitude, brouillon.longitude]
     : CENTRE_BURKINA_FASO;
 
+  const aDesFiltres = filtreRegion || filtreProvince || filtreVille || filtreMinistere || filtreStatut || recherche;
+
   return (
     <>
-      <Topbar title="Cartographie" subtitle={`Positionnement des sites — ${sitePositionnes.length} sur ${items.length} déjà positionnés`} onRefresh={charger} />
+      <div className="dashboard-topbar">
+        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
+        <div className="topbar-titles">
+          <h1 className="topbar-title-welcome">Cartographie</h1>
+          <p className="topbar-subtitle">
+            {nbPositionnes} / {nbTotal} sites positionnés ({pctPositionnes}%)
+          </p>
+        </div>
+        <div className="topbar-actions">
+          <button className="btn-outline" onClick={exporterGeoJson}
+            style={{ padding: "8px 14px", borderRadius: "10px", fontSize: "12px" }}>
+            ⬇ Exporter GeoJSON
+          </button>
+          <button className="topbar-refresh" onClick={charger}>⟳ Actualiser</button>
+          <div className="topbar-user">
+            <div className="topbar-user-avatar">{initiales}</div>
+            <div className="topbar-user-info">
+              <div className="topbar-user-name">Admin {nomAdmin}</div>
+              <div className="topbar-user-role">Super Administrateur</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="backoffice-content">
-        {erreur && <p style={{ color: "var(--color-ko)" }}>Erreur : {erreur}</p>}
+      <div className="backoffice-content dashboard-content">
+        {erreur && <p style={{ color: "var(--bo-ko)" }}>Erreur : {erreur}</p>}
+        {succes && <p style={{ color: "var(--bo-ok)" }}>{succes}</p>}
 
-        <div className="panel-header" style={{ marginBottom: "16px" }}>
-          <h2 style={{ margin: 0 }}>Carte des sites</h2>
-          <div className="panel-header-actions">
-            <button className="btn-outline" onClick={exporterGeoJson}>Exporter GeoJSON</button>
+        {/* Barre de progression positionnement */}
+        <div className="carto-progress-panel">
+          <div className="carto-progress-header">
+            <span>📍 Progression du positionnement GPS</span>
+            <span className="carto-progress-count"><strong>{nbPositionnes}</strong> / {nbTotal} sites</span>
+          </div>
+          <div className="carto-progress-bar">
+            <div className="carto-progress-fill" style={{ width: `${pctPositionnes}%` }}></div>
+          </div>
+          <div className="carto-progress-labels">
+            <span style={{ color: "var(--bo-ok)" }}>✓ {nbPositionnes} positionnés</span>
+            <span style={{ color: "var(--bo-warn)" }}>⚠ {nbTotal - nbPositionnes} à positionner</span>
           </div>
         </div>
 
-        {/* .map-layout / .map-sidebar : meme composant visuel que la carte
-            cote Decideur (carte a gauche, liste filtrable a droite a partir
-            de 1024px, empile en dessous sur petit ecran). */}
-        <div className="map-layout">
-          <MapContainer center={centreCarte} zoom={brouillon.latitude != null ? 12 : 7} className="map-container" key={siteId}>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <LocationPicker onPick={(lat, lng) => setBrouillon((prev) => ({ ...prev, latitude: lat, longitude: lng }))} />
+        {/* Layout 2 colonnes : carte + liste */}
+        <div className="carto-layout">
 
-{items
-              .filter((item) => item.latitude != null && item.longitude != null && item.siteId !== siteId)
-              .map((item) => (
-                <Marker key={item.siteId} position={[item.latitude, item.longitude]} icon={buildColoredMarkerIcon("UNKNOWN")} />
-              ))}
-
-            {brouillon.latitude != null && brouillon.longitude != null && (
-              <Marker position={[brouillon.latitude, brouillon.longitude]} icon={buildColoredMarkerIcon("OK")} />
-            )}
-          </MapContainer>
-
-          <div className="map-sidebar">
-            <div className="form-field" style={{ marginBottom: "8px" }}>
-              <input
-                type="text"
-                placeholder="Rechercher un site…"
-                value={recherche}
-                onChange={(e) => setRecherche(e.target.value)}
-              />
+          {/* COLONNE GAUCHE : carte */}
+          <div className="carto-map-col">
+            <div className="carto-map-header">
+              {modePositionnement ? (
+                <div className="carto-mode-actif">
+                  🖱️ Cliquez sur la carte pour positionner <strong>{siteSelectionne?.nom}</strong>
+                  <button className="btn-outline" style={{ marginLeft: "12px", fontSize: "11px" }}
+                    onClick={() => setModePositionnement(false)}>Annuler</button>
+                </div>
+              ) : (
+                <span style={{ fontSize: "12px", color: "var(--bo-ink-muted)" }}>
+                  {siteSelectionne ? `Site sélectionné : ${siteSelectionne.nom}` : "Sélectionnez un site dans la liste"}
+                </span>
+              )}
             </div>
 
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", marginBottom: "10px", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={seulementAPositionner}
-                onChange={(e) => setSeulementAPositionner(e.target.checked)}
+            <MapContainer
+              center={centreCarte}
+              zoom={brouillon.latitude != null ? 11 : 7}
+              className="carto-map"
+              key={siteId}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              À positionner uniquement
-            </label>
+              <ClickHandler actif={modePositionnement}
+                onPick={(lat, lng) => setBrouillon((prev) => ({ ...prev, latitude: lat, longitude: lng }))} />
 
-            <div className="map-sidebar-count">
-              {itemsFiltres.length} site{itemsFiltres.length > 1 ? "s" : ""}
-            </div>
+              {/* Uniquement les sites filtres ET positionnés, sauf le site selectionne */}
+              {itemsFiltres
+                .filter((i) => i.latitude != null && i.longitude != null && i.siteId !== siteId)
+                .map((i) => (
+                  <Marker key={i.siteId} position={[i.latitude, i.longitude]}
+                    icon={buildColoredMarkerIcon("UNKNOWN")}
+                    eventHandlers={{ click: () => setSiteId(i.siteId) }}>
+                    <Popup><strong>{i.nom}</strong><br />{i.ville}</Popup>
+                  </Marker>
+                ))}
 
-            <div className="map-sidebar-list">
-              {itemsFiltres.map((item) => (
-                <button
-                  type="button"
-                  key={item.siteId}
-                  className="map-site-item"
-                  style={{ border: "none", width: "100%", cursor: "pointer", background: item.siteId === siteId ? "#E9F1FB" : "transparent" }}
-                  onClick={() => setSiteId(item.siteId)}
-                >
-                  <div>
-                    <div className="map-site-item-name">{item.nom}</div>
-                    <div className="map-site-item-ville">{item.positionne ? "Positionné" : "Non positionné"}</div>
+              {/* Site selectionne (vert) */}
+              {brouillon.latitude != null && brouillon.longitude != null && (
+                <Marker position={[brouillon.latitude, brouillon.longitude]}
+                  icon={buildColoredMarkerIcon("OK")}>
+                  <Popup><strong>{siteSelectionne?.nom}</strong></Popup>
+                </Marker>
+              )}
+            </MapContainer>
+
+            {/* Panneau de positionnement */}
+            {siteSelectionne && (
+              <div className="carto-position-panel">
+                <div className="carto-position-header">
+                  <h3>{siteSelectionne.nom}</h3>
+                  <span className={`status-pill ${siteSelectionne.positionne ? "pill-ok" : "pill-warn"}`}>
+                    {siteSelectionne.positionne ? "✓ Positionné" : "⚠ À positionner"}
+                  </span>
+                </div>
+
+                <div className="carto-coords">
+                  <div className="carto-coord-box">
+                    <div className="carto-coord-label">Latitude</div>
+                    <div className="carto-coord-value">{brouillon.latitude?.toFixed(6) ?? "—"}</div>
                   </div>
-<span className={`status-badge ${item.positionne ? "badge-unknown" : "badge-warn"}`}>
-                    {item.positionne ? "Positionné" : "À positionner"}
+                  <div className="carto-coord-box">
+                    <div className="carto-coord-label">Longitude</div>
+                    <div className="carto-coord-value">{brouillon.longitude?.toFixed(6) ?? "—"}</div>
+                  </div>
+                </div>
+
+                <div className="form-field" style={{ marginBottom: "10px" }}>
+                  <label className="cascade-label">Info affichée au survol</label>
+                  <input value={brouillon.infoAuSurvol}
+                    onChange={(e) => setBrouillon((prev) => ({ ...prev, infoAuSurvol: e.target.value }))}
+                    placeholder="ex: Hub central RESINA" />
+                </div>
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button className="topbar-refresh"
+                    onClick={() => setModePositionnement(!modePositionnement)}
+                    style={{ fontSize: "12px", flex: 1 }}>
+                    {modePositionnement ? "✕ Annuler le clic" : "📍 Cliquer sur la carte"}
+                  </button>
+                  <button className="btn-primary"
+                    disabled={enregistrement || brouillon.latitude == null}
+                    onClick={enregistrer}
+                    style={{ fontSize: "12px", flex: 1, padding: "8px", borderRadius: "10px" }}>
+                    {enregistrement ? "Enregistrement…" : "💾 Enregistrer"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* COLONNE DROITE : filtres + liste */}
+          <div className="carto-list-col">
+            {/* Filtres */}
+            <div className="carto-filters">
+              <input className="attention-search" style={{ width: "100%", marginBottom: "8px" }}
+                placeholder="Rechercher un site…" value={recherche}
+                onChange={(e) => { setRecherche(e.target.value); setPageCourante(1); }} />
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "8px" }}>
+                <div className="cascade-group">
+                  <label className="cascade-label">Région</label>
+                  <select className="attention-search" value={filtreRegion}
+                    onChange={(e) => onRegionChange(e.target.value)}>
+                    <option value="">Toutes</option>
+                    {stats?.regions.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div className="cascade-group">
+                  <label className="cascade-label">Province</label>
+                  <select className="attention-search" value={filtreProvince}
+                    onChange={(e) => onProvinceChange(e.target.value)}>
+                    <option value="">Toutes</option>
+                    {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div className="cascade-group">
+                  <label className="cascade-label">Ville</label>
+                  <select className="attention-search" value={filtreVille}
+                    onChange={(e) => { setFiltreVille(e.target.value); setPageCourante(1); }}>
+                    <option value="">Toutes</option>
+                    {villes.map((v) => <option key={v} value={clean(v)}>{clean(v)}</option>)}
+                  </select>
+                </div>
+                <div className="cascade-group">
+                  <label className="cascade-label">Ministère</label>
+                  <select className="attention-search" value={filtreMinistere}
+                    onChange={(e) => { setFiltreMinistere(e.target.value); setPageCourante(1); }}>
+                    <option value="">Tous</option>
+                    {stats?.ministeres.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+                {["", "positionne", "non_positionne"].map((v) => (
+                  <button key={v}
+                    className={`pagination-btn ${filtreStatut === v ? "pagination-btn-active" : ""}`}
+                    style={{ flex: 1, fontSize: "11px" }}
+                    onClick={() => { setFiltreStatut(v); setPageCourante(1); }}>
+                    {v === "" ? "Tous" : v === "positionne" ? "✓ Positionnés" : "⚠ À faire"}
+                  </button>
+                ))}
+              </div>
+
+              {aDesFiltres && (
+                <button className="btn-outline" style={{ width: "100%", fontSize: "11px" }}
+                  onClick={() => {
+                    setFiltreRegion(""); setFiltreProvince(""); setFiltreVille("");
+                    setFiltreMinistere(""); setFiltreStatut(""); setRecherche("");
+                    setProvinces(stats?.provinces || []); setVilles(stats?.villes || []);
+                    setPageCourante(1);
+                  }}>✕ Effacer les filtres</button>
+              )}
+
+              <div className="map-sidebar-count" style={{ marginTop: "6px" }}>
+                {itemsFiltres.length} site{itemsFiltres.length > 1 ? "s" : ""}
+              </div>
+            </div>
+
+            {/* Liste */}
+            <div className="carto-site-list">
+              {itemsPage.map((item) => (
+                <button key={item.siteId} type="button"
+                  className="carto-site-item"
+                  style={{ background: item.siteId === siteId ? "var(--bo-primary-soft)" : "transparent" }}
+                  onClick={() => setSiteId(item.siteId)}>
+                  <div>
+                    <div className="carto-site-nom">{item.nom}</div>
+                    <div className="carto-site-ville">{clean(item.ville)}</div>
+                  </div>
+                  <span className={`status-pill ${item.positionne ? "pill-ok" : "pill-warn"}`}
+                    style={{ fontSize: "10px", padding: "2px 8px" }}>
+                    {item.positionne ? "✓" : "⚠"}
                   </span>
                 </button>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="pagination-bar" style={{ padding: "8px 4px" }}>
+                <button className="pagination-btn" onClick={() => setPageCourante(pageActuelle - 1)}
+                  disabled={pageActuelle === 1}>←</button>
+                <span style={{ fontSize: "11px", color: "var(--bo-ink-muted)" }}>
+                  {pageActuelle} / {totalPages}
+                </span>
+                <button className="pagination-btn" onClick={() => setPageCourante(pageActuelle + 1)}
+                  disabled={pageActuelle === totalPages}>→</button>
+              </div>
+            )}
           </div>
         </div>
-
-        {siteSelectionne && (
-          <div className="panel" style={{ marginTop: "16px" }}>
-            <div className="panel-header">
-              <h2>Positionner : {siteSelectionne.nom}</h2>
-            </div>
-
-            <p style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
-              Cliquez sur la carte ci-dessus pour définir/modifier la position de ce site.
-            </p>
-
-            <div className="form-grid">
-              <div className="form-field">
-                <label>Latitude</label>
-                <input type="number" step="0.0001" value={brouillon.latitude ?? ""} readOnly />
-              </div>
-              <div className="form-field">
-                <label>Longitude</label>
-                <input type="number" step="0.0001" value={brouillon.longitude ?? ""} readOnly />
-              </div>
-              <div className="form-field" style={{ gridColumn: "span 2" }}>
-                <label>Info affichée au survol / clic</label>
-                <input
-                  value={brouillon.infoAuSurvol}
-                  onChange={(e) => setBrouillon((prev) => ({ ...prev, infoAuSurvol: e.target.value }))}
-                  placeholder="ex: Hub central RESINA"
-                />
-              </div>
-            </div>
-
-            {succes && <p style={{ color: "var(--color-ok)" }}>Position enregistrée avec succès.</p>}
-
-            <div className="modal-actions" style={{ justifyContent: "flex-start", marginTop: "8px" }}>
-              <button className="btn-primary" onClick={enregistrer} disabled={enregistrement || brouillon.latitude == null}>
-                {enregistrement ? "Enregistrement..." : "Enregistrer la position"}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
