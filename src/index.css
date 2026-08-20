@@ -222,9 +222,7 @@ body {
 
 .floor-row.ok { background: #EAF9F1; border-color: #C8ECD9; }
 .floor-row.warn { background: #FDF2E3; border-color: #F5DDB0; }
-.floor-row.ko { background: #FFF4F4; border-color: #FAD4D4; }.floor-row.ok { background: #EAF9F1; }
-.floor-row.warn { background: #FDF2E3; }
-.floor-row.ko { background: #FDEAEA; }
+.floor-row.ko { background: #FDEAEA; border-color: #FAD4D4; }
 .floor-dot {
   width: 10px;
   height: 10px;
@@ -360,12 +358,6 @@ body {
   margin-top: 20px;
 }
 
-
-.backoffice-shell {
-  display: flex;
-  min-height: 100vh;
-  font-family: var(--font-main);
-}
 
 .backoffice-shell {
   display: flex;
@@ -638,9 +630,7 @@ body {
 .kpi-card.kpi-warn { border-top-color: var(--color-warn); }
 .kpi-card.kpi-ko { border-top-color: var(--color-ko); }
 
-.kpi-value { font-size: 28px; font-weight: 700; }
 .kpi-value-sub { font-size: 14px; font-weight: 400; color: var(--color-text-muted); }
-.kpi-label { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
 
 .panel {
   background: white;
@@ -1108,59 +1098,6 @@ body {
   }
 }
 
-/* ---- ETAGES DEPLIABLES (LanStatusCard) ---- */
-.floor-row {
-  cursor: pointer;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.floor-row-header {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.floor-chevron {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--color-text-muted);
-  transition: transform 0.15s;
-  flex-shrink: 0;
-  padding-top: 2px;
-}
-
-.floor-row.expanded .floor-chevron { transform: rotate(180deg); }
-
-.floor-equipment-list {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.floor-equipment-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.floor-equipment-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.floor-equipment-dot.ok { background: var(--color-ok); }
-.floor-equipment-dot.warn { background: var(--color-warn); }
-.floor-equipment-dot.ko { background: var(--color-ko); }
-.floor-equipment-dot.unknown { background: var(--color-unknown); }
-
-.floor-equipment-name { flex: 1; font-weight: 600; }
-.floor-equipment-type { color: var(--color-text-muted); font-size: 11px; }
 
 
 /* ==================================================================
@@ -2109,3 +2046,891 @@ body {
 }
 
 .login-card { position: relative; z-index: 1; }
+
+/* ==================================================================
+   NOUVEAU DASHBOARD BACKOFFICE (reproduction de la maquette)
+   ================================================================== */
+
+/* ---- SIDEBAR REVAMP ---- */
+.backoffice-shell .sidebar-brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 16px;
+}
+
+.backoffice-shell .sidebar-brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.backoffice-shell .sidebar-brand-texts { flex: 1; min-width: 0; }
+.backoffice-shell .sidebar-brand-title { font-family: var(--bo-font-display); font-size: 20px; font-weight: 700; letter-spacing: 1px; color: white; }
+.backoffice-shell .sidebar-brand-subtitle { font-size: 11px; opacity: 0.65; margin: 2px 0 8px; }
+
+.backoffice-shell .sidebar-brand-pill {
+  display: inline-block;
+  background: var(--bo-accent);
+  color: var(--bo-primary-deep);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.backoffice-shell .sidebar-section-title {
+  font-family: var(--bo-font-display);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+  padding: 12px 20px 8px;
+  text-transform: uppercase;
+}
+
+/* Groupes depliables */
+.backoffice-shell .sidebar-group { margin: 2px 0; }
+
+.backoffice-shell .sidebar-group-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.backoffice-shell .sidebar-group-caret {
+  margin-left: auto;
+  font-size: 10px;
+  transition: transform 0.15s;
+  opacity: 0.6;
+}
+
+.backoffice-shell .sidebar-group.open .sidebar-group-caret { transform: rotate(90deg); }
+
+.backoffice-shell .sidebar-group-children {
+  padding-left: 20px;
+  margin: 2px 0 6px;
+}
+
+.backoffice-shell .sidebar-group-children .sidebar-link {
+  padding: 7px 12px 7px 13px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.backoffice-shell .sidebar-group-children .sidebar-link-icon {
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+/* Footer sidebar */
+.backoffice-shell .sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.backoffice-shell .sidebar-copyright { font-size: 11px; opacity: 0.55; }
+.backoffice-shell .sidebar-copyright-sub { font-size: 10px; opacity: 0.4; margin-top: 2px; }
+
+.backoffice-shell .sidebar-logout-full {
+  width: 100%;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.backoffice-shell .sidebar-logout-full:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* Sidebar reduite (bouton hamburger dans la topbar) */
+.backoffice-shell.sidebar-reduced .sidebar { width: 72px; }
+.backoffice-shell.sidebar-reduced .sidebar-brand-texts,
+.backoffice-shell.sidebar-reduced .sidebar-section-title,
+.backoffice-shell.sidebar-reduced .sidebar-link:not(.sidebar-group-toggle) > *:not(.sidebar-link-icon),
+.backoffice-shell.sidebar-reduced .sidebar-group-toggle > *:not(.sidebar-link-icon),
+.backoffice-shell.sidebar-reduced .sidebar-group-children,
+.backoffice-shell.sidebar-reduced .sidebar-footer { display: none; }
+.backoffice-shell.sidebar-reduced .sidebar-link { justify-content: center; }
+
+/* ---- TOPBAR DU DASHBOARD ---- */
+.backoffice-shell .dashboard-topbar {
+  background: white;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid var(--bo-border);
+}
+
+.backoffice-shell .topbar-collapse-btn {
+  background: #F5F6F8;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.backoffice-shell .topbar-collapse-btn:hover { background: var(--bo-primary-soft); }
+
+.backoffice-shell .topbar-titles { flex: 1; }
+.backoffice-shell .topbar-title-welcome { font-family: var(--bo-font-display); font-size: 22px; font-weight: 600; color: var(--bo-ink); margin: 0; }
+.backoffice-shell .topbar-subtitle { font-size: 13px; color: var(--bo-ink-muted); margin: 4px 0 0; }
+
+.backoffice-shell .topbar-actions { display: flex; align-items: center; gap: 12px; }
+
+.backoffice-shell .topbar-live-badge {
+  background: #E3F6EC;
+  color: var(--bo-ok);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.backoffice-shell .topbar-live-badge .live-dot { animation: live-pulse 1.6s ease-in-out infinite; }
+.backoffice-shell .topbar-live-sub { font-size: 10px; font-weight: 500; opacity: 0.8; }
+
+.backoffice-shell .topbar-refresh {
+  background: var(--bo-primary);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.backoffice-shell .topbar-refresh:hover { background: var(--bo-primary-deep); }
+
+/* ---- CONTENU DASHBOARD ---- */
+.backoffice-shell .dashboard-content { padding: 24px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+/* KPI cards nouveau style (avec icone coloree a gauche) */
+.backoffice-shell .kpi-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.backoffice-shell .kpi-card-v2 {
+  background: white;
+  border: 1px solid var(--bo-border);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.backoffice-shell .kpi-card-v2:hover { box-shadow: 0 8px 20px rgba(16, 32, 61, 0.08); transform: translateY(-2px); }
+
+.backoffice-shell .kpi-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.backoffice-shell .kpi-icon-blue { background: linear-gradient(135deg, #4A9EFF, #2563EB); }
+.backoffice-shell .kpi-icon-green { background: linear-gradient(135deg, #22C55E, #0D9B5A); }
+.backoffice-shell .kpi-icon-orange { background: linear-gradient(135deg, #FBBF24, #C97C0A); }
+.backoffice-shell .kpi-icon-red { background: linear-gradient(135deg, #F87171, #D93535); }
+.backoffice-shell .kpi-icon-navy { background: linear-gradient(135deg, #3B82F6, #0A3D7A); }
+
+.backoffice-shell .kpi-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--bo-ink-muted);
+  text-transform: uppercase;
+}
+
+.backoffice-shell .kpi-card-value {
+  font-family: var(--bo-font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bo-ink);
+  line-height: 1.1;
+  margin: 4px 0 2px;
+}
+
+.backoffice-shell .kpi-card-sub {
+  font-size: 11px;
+  color: var(--bo-ink-muted);
+}
+
+/* Panneau Sante globale */
+.backoffice-shell .health-panel {
+  background: white;
+  border: 1px solid var(--bo-border);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.backoffice-shell .health-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.backoffice-shell .health-icon { font-size: 22px; }
+.backoffice-shell .health-panel-header h2 { font-family: var(--bo-font-display); font-size: 17px; margin: 0; color: var(--bo-ink); }
+
+.backoffice-shell .health-panel-body {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 32px;
+  align-items: center;
+}
+
+.backoffice-shell .health-ring {
+  position: relative;
+  width: 180px;
+  height: 180px;
+}
+
+.backoffice-shell .health-ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.backoffice-shell .health-ring-value { font-family: var(--bo-font-display); font-size: 32px; font-weight: 700; color: var(--bo-ink); }
+.backoffice-shell .health-ring-label { font-size: 12px; color: var(--bo-ok); font-weight: 600; }
+
+.backoffice-shell .health-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.backoffice-shell .health-legend-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #F5F6F8;
+  padding: 12px 14px;
+  border-radius: 10px;
+}
+
+.backoffice-shell .health-legend-item .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.backoffice-shell .health-legend-item .dot.ok { background: var(--bo-ok); }
+.backoffice-shell .health-legend-item .dot.warn { background: var(--bo-warn); }
+.backoffice-shell .health-legend-item .dot.ko { background: var(--bo-ko); }
+
+.backoffice-shell .legend-label { font-size: 12px; color: var(--bo-ink-muted); font-weight: 600; }
+.backoffice-shell .legend-value { font-family: var(--bo-font-display); font-size: 20px; font-weight: 700; color: var(--bo-ink); }
+.backoffice-shell .legend-sub { font-size: 11px; color: var(--bo-ink-muted); }
+
+.backoffice-shell .health-summary {
+  background: linear-gradient(135deg, #E3F6EC, #F0FBF4);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  min-width: 260px;
+  max-width: 320px;
+}
+
+.backoffice-shell .health-summary-icon {
+  font-size: 28px;
+  background: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.backoffice-shell .health-summary-title { font-weight: 700; color: var(--bo-ink); font-size: 13px; margin-bottom: 4px; }
+.backoffice-shell .health-summary-text { font-size: 12px; color: var(--bo-ink-muted); margin-bottom: 10px; }
+
+.backoffice-shell .health-summary-bar {
+  background: rgba(13, 155, 90, 0.15);
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.backoffice-shell .health-summary-bar-fill {
+  background: var(--bo-ok);
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+/* Panneau Sites en attention */
+.backoffice-shell .attention-panel .panel-header h2 { display: flex; align-items: center; gap: 8px; }
+
+.backoffice-shell .attention-count {
+  background: var(--bo-warn);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.backoffice-shell .attention-search {
+  padding: 8px 12px;
+  border: 1px solid var(--bo-border);
+  border-radius: 8px;
+  font-size: 13px;
+  min-width: 220px;
+}
+
+.backoffice-shell .attention-footer {
+  font-size: 12px;
+  color: var(--bo-ink-muted);
+  padding: 12px 4px 4px;
+  margin: 0;
+}
+
+/* Responsive : sur ecran etroit, empile le panneau sante */
+@media (max-width: 1100px) {
+  .backoffice-shell .health-panel-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .backoffice-shell .health-summary { max-width: 100%; }
+}
+
+/* ==================================================================
+   DASHBOARD V2 — Ajustements pour copie conforme de la maquette
+   ================================================================== */
+
+/* Header : version compacte des elements decoratifs */
+.backoffice-shell .topbar-live-badge-compact {
+  background: #E3F6EC;
+  color: var(--bo-ok);
+  padding: 6px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.backoffice-shell .topbar-live-badge-compact .live-dot {
+  animation: live-pulse 1.6s ease-in-out infinite;
+  width: 8px;
+  height: 8px;
+}
+.backoffice-shell .topbar-live-label { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+.backoffice-shell .topbar-live-sub { font-size: 10px; opacity: 0.75; font-weight: 500; }
+
+.backoffice-shell .topbar-period {
+  background: white;
+  border: 1px solid var(--bo-border);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--bo-ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.backoffice-shell .topbar-period-caret { font-size: 10px; opacity: 0.6; }
+
+.backoffice-shell .topbar-search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+.backoffice-shell .topbar-search input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1px solid var(--bo-border);
+  border-radius: 10px;
+  font-size: 12.5px;
+  background: white;
+  box-sizing: border-box;
+}
+.backoffice-shell .topbar-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  opacity: 0.5;
+}
+
+.backoffice-shell .topbar-icon-btn {
+  position: relative;
+  background: white;
+  border: 1px solid var(--bo-border);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.backoffice-shell .topbar-icon-btn:hover { background: #F5F6F8; }
+
+.backoffice-shell .topbar-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--bo-warn);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 2px solid white;
+}
+.backoffice-shell .topbar-badge-orange { background: var(--bo-warn); }
+
+.backoffice-shell .topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 8px;
+  border-left: 1px solid var(--bo-border);
+  margin-left: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.backoffice-shell .topbar-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4A9EFF, #0A3D7A);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+.backoffice-shell .topbar-user-name { font-size: 12px; font-weight: 700; color: var(--bo-ink); }
+.backoffice-shell .topbar-user-role { font-size: 10px; color: var(--bo-ink-muted); }
+
+/* Retire l'ancien badge grand */
+.backoffice-shell .topbar-live-badge { display: none; }
+
+/* KPI values coloree selon severite */
+.backoffice-shell .kpi-value-green { color: var(--bo-ok); }
+.backoffice-shell .kpi-value-orange { color: var(--bo-warn); }
+.backoffice-shell .kpi-value-red { color: var(--bo-ko); }
+
+/* Legende du cercle sante : 3 cartes distinctes */
+.backoffice-shell .health-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.backoffice-shell .health-legend-card {
+  background: #F5F6F8;
+  border-radius: 12px;
+  padding: 16px;
+}
+.backoffice-shell .legend-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--bo-ink-muted);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.backoffice-shell .legend-card-title .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.backoffice-shell .legend-card-title .dot.ok { background: var(--bo-ok); }
+.backoffice-shell .legend-card-title .dot.warn { background: var(--bo-warn); }
+.backoffice-shell .legend-card-title .dot.ko { background: var(--bo-ko); }
+.backoffice-shell .legend-card-value {
+  font-family: var(--bo-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--bo-ink);
+  line-height: 1.1;
+}
+.backoffice-shell .legend-card-sub { font-size: 11px; color: var(--bo-ink-muted); margin-top: 2px; }
+
+/* Nettoyage : retire les anciens styles de legende */
+.backoffice-shell .health-legend { display: none; }
+
+/* Health summary : variations selon etat */
+.backoffice-shell .summary-excellent { background: linear-gradient(135deg, #E3F6EC, #F0FBF4); }
+.backoffice-shell .summary-bon { background: linear-gradient(135deg, #E3F6EC, #F0FBF4); }
+.backoffice-shell .summary-surveiller { background: linear-gradient(135deg, #FDF1E0, #FEF7EA); }
+.backoffice-shell .summary-critique { background: linear-gradient(135deg, #FCE8E8, #FDF0F0); }
+
+/* Boutons vue tableau/liste (decoratifs) */
+.backoffice-shell .view-toggle {
+  display: flex;
+  gap: 2px;
+  background: #F5F6F8;
+  border-radius: 8px;
+  padding: 3px;
+}
+.backoffice-shell .view-toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--bo-ink-muted);
+}
+.backoffice-shell .view-toggle-btn.active {
+  background: var(--bo-primary);
+  color: white;
+}
+
+/* Pills de statut plus arrondis dans le tableau */
+.backoffice-shell .status-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.backoffice-shell .pill-ok { background: #E3F6EC; color: var(--bo-ok); }
+.backoffice-shell .pill-warn { background: #FDF1E0; color: var(--bo-warn); }
+.backoffice-shell .pill-ko { background: #FCE8E8; color: var(--bo-ko); }
+
+/* Bouton Voir dans le tableau */
+.backoffice-shell .btn-voir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: white;
+  border: 1px solid var(--bo-border);
+  border-radius: 8px;
+  color: var(--bo-ink);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+.backoffice-shell .btn-voir:hover { background: #F5F6F8; }
+
+.backoffice-shell .alerte-cell { font-size: 12px; color: var(--bo-ink-muted); font-family: var(--bo-font-mono); }
+
+.backoffice-shell .wave { display: inline-block; animation: wave-hand 2s ease-in-out infinite; transform-origin: 70% 70%; }
+@keyframes wave-hand {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+
+/* Responsive : sur ecran etroit, cache les elements moins critiques */
+@media (max-width: 1400px) {
+  .backoffice-shell .topbar-user-info { display: none; }
+}
+@media (max-width: 1200px) {
+  .backoffice-shell .topbar-search { display: none; }
+}
+/* ==================================================================
+   AJUSTEMENT GLOBAL DES TAILLES DE POLICE — Backoffice
+   Aligne l'échelle typographique sur la maquette (densité plus fine)
+   ================================================================== */
+
+.backoffice-shell {
+  font-size: 13px;
+}
+
+/* Contenu principal */
+.backoffice-shell .backoffice-content { font-size: 13px; }
+
+/* KPI */
+.backoffice-shell .kpi-card-label { font-size: 9.5px; }
+.backoffice-shell .kpi-card-value { font-size: 24px; }
+.backoffice-shell .kpi-card-sub { font-size: 10.5px; }
+.backoffice-shell .kpi-card-icon { width: 44px; height: 44px; font-size: 18px; }
+.backoffice-shell .kpi-card-v2 { padding: 14px; gap: 12px; }
+
+/* Topbar */
+.backoffice-shell .topbar-title-welcome { font-size: 18px; }
+.backoffice-shell .topbar-subtitle { font-size: 12px; }
+.backoffice-shell .topbar-live-label { font-size: 10px; }
+.backoffice-shell .topbar-live-sub { font-size: 9.5px; }
+.backoffice-shell .topbar-period { font-size: 11.5px; padding: 7px 10px; }
+.backoffice-shell .topbar-search input { font-size: 11.5px; padding: 8px 12px 8px 32px; }
+.backoffice-shell .topbar-icon-btn { width: 36px; height: 36px; font-size: 14px; }
+.backoffice-shell .topbar-user-avatar { width: 36px; height: 36px; font-size: 12px; }
+.backoffice-shell .topbar-user-name { font-size: 11px; }
+.backoffice-shell .topbar-user-role { font-size: 9.5px; }
+.backoffice-shell .dashboard-topbar { padding: 16px 24px; gap: 16px; }
+
+/* Santé */
+.backoffice-shell .health-panel { padding: 20px; }
+.backoffice-shell .health-panel-header h2 { font-size: 15px; }
+.backoffice-shell .health-icon { font-size: 18px; }
+.backoffice-shell .health-ring { width: 160px; height: 160px; }
+.backoffice-shell .health-ring svg { width: 160px; height: 160px; }
+.backoffice-shell .health-ring-value { font-size: 26px; }
+.backoffice-shell .health-ring-label { font-size: 11px; }
+.backoffice-shell .legend-card-title { font-size: 11px; }
+.backoffice-shell .legend-card-value { font-size: 20px; }
+.backoffice-shell .legend-card-sub { font-size: 10px; }
+.backoffice-shell .health-legend-card { padding: 12px 14px; }
+.backoffice-shell .health-summary { padding: 14px; gap: 12px; }
+.backoffice-shell .health-summary-icon { width: 40px; height: 40px; font-size: 22px; }
+.backoffice-shell .health-summary-title { font-size: 12px; }
+.backoffice-shell .health-summary-text { font-size: 11px; }
+.backoffice-shell .health-panel-body { gap: 24px; }
+
+/* Panneau attention */
+.backoffice-shell .attention-panel .panel-header h2 { font-size: 14px; }
+.backoffice-shell .attention-count { font-size: 11px; padding: 2px 8px; }
+.backoffice-shell .attention-search { font-size: 11.5px; padding: 7px 10px; min-width: 180px; }
+.backoffice-shell .btn-outline { font-size: 11.5px; padding: 7px 12px; }
+
+/* Tableau */
+.backoffice-shell .admin-table th { font-size: 10px; padding: 10px 12px; }
+.backoffice-shell .admin-table td { font-size: 12px; padding: 12px; }
+.backoffice-shell .site-name-cell { font-size: 12.5px; }
+.backoffice-shell .status-pill { font-size: 10.5px; padding: 3px 10px; }
+.backoffice-shell .btn-voir { font-size: 11px; padding: 5px 12px; }
+.backoffice-shell .alerte-cell { font-size: 11px; }
+
+/* Sidebar */
+.backoffice-shell .sidebar-brand-title { font-size: 17px; }
+.backoffice-shell .sidebar-brand-subtitle { font-size: 10px; }
+.backoffice-shell .sidebar-brand-pill { font-size: 9px; padding: 3px 8px; }
+.backoffice-shell .sidebar-section-title { font-size: 9.5px; }
+.backoffice-shell .sidebar-link { font-size: 12px; padding: 8px 20px; }
+.backoffice-shell .sidebar-link-icon { font-size: 14px; }
+.backoffice-shell .sidebar-group-children .sidebar-link { font-size: 11.5px; }
+.backoffice-shell .sidebar-copyright { font-size: 10px; }
+.backoffice-shell .sidebar-copyright-sub { font-size: 9.5px; }
+.backoffice-shell .sidebar-logout-full { font-size: 11px; padding: 7px 12px; }
+
+/* Titre "Bienvenue" sur UNE seule ligne */
+.backoffice-shell .topbar-title-welcome {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Topbar plus compacte pour degager de la place */
+.backoffice-shell .dashboard-topbar { padding: 14px 20px; gap: 12px; }
+.backoffice-shell .topbar-title-welcome { font-size: 17px; }
+.backoffice-shell .topbar-subtitle { font-size: 11.5px; }
+.backoffice-shell .topbar-titles { min-width: 0; }
+.backoffice-shell .topbar-actions { flex-shrink: 0; gap: 10px; }
+.backoffice-shell .topbar-search { max-width: 220px; min-width: 160px; }
+.backoffice-shell .topbar-search input { font-size: 11px; }
+.backoffice-shell .topbar-period { font-size: 11px; padding: 6px 10px; }
+
+/* Sur ecran moyen, cache le sous-titre du live badge et le badge date pour gagner de la place */
+@media (max-width: 1500px) {
+  .backoffice-shell .topbar-live-sub { display: none; }
+}
+@media (max-width: 1350px) {
+  .backoffice-shell .topbar-period { display: none; }
+}
+
+/* KPI : forcer 5 colonnes sur une seule ligne */
+.backoffice-shell .kpi-grid-v2 {
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+/* Contenu du KPI plus compact pour tenir sur 5 colonnes */
+.backoffice-shell .kpi-card-v2 { padding: 14px 12px; gap: 10px; }
+.backoffice-shell .kpi-card-icon { width: 40px; height: 40px; font-size: 16px; border-radius: 10px; }
+.backoffice-shell .kpi-card-label { font-size: 9px; letter-spacing: 0.5px; }
+.backoffice-shell .kpi-card-value { font-size: 22px; }
+.backoffice-shell .kpi-card-sub { font-size: 10px; }
+
+/* Sur ecran plus etroit, on peut passer a 3 puis 2 colonnes */
+@media (max-width: 1400px) {
+  .backoffice-shell .kpi-grid-v2 { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .backoffice-shell .kpi-grid-v2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Actions dans le tableau : variantes rouge/verte */
+.backoffice-shell .btn-voir.btn-voir-danger { color: var(--bo-ko); border-color: rgba(217, 53, 53, 0.3); }
+.backoffice-shell .btn-voir.btn-voir-danger:hover { background: #FCE8E8; }
+
+/* ==================================================================
+   PAGINATION (tableaux backoffice)
+   ================================================================== */
+.backoffice-shell .pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 4px 4px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.backoffice-shell .pagination-info {
+  font-size: 12px;
+  color: var(--bo-ink-muted);
+}
+
+.backoffice-shell .pagination-controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.backoffice-shell .pagination-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--bo-border);
+  background: white;
+  color: var(--bo-ink);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.backoffice-shell .pagination-btn:hover:not(:disabled) {
+  background: #F5F6F8;
+  border-color: var(--bo-primary);
+}
+.backoffice-shell .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.backoffice-shell .pagination-btn-active {
+  background: var(--bo-primary);
+  color: white;
+  border-color: var(--bo-primary);
+}
+.backoffice-shell .pagination-btn-active:hover {
+  background: var(--bo-primary-deep) !important;
+  color: white;
+}
+
+.backoffice-shell .pagination-ellipsis {
+  color: var(--bo-ink-muted);
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+/* ==================================================================
+   PAGE ÉQUIPEMENTS — stats par type + filtres
+   ================================================================== */
+
+.backoffice-shell .eq-stats-section { margin-bottom: 4px; }
+
+.backoffice-shell .eq-stats-title {
+  font-family: var(--bo-font-display);
+  font-size: 15px;
+  color: var(--bo-ink);
+  margin-bottom: 12px;
+}
+
+.backoffice-shell .eq-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.backoffice-shell .eq-stat-card {
+  background: white;
+  border: 1px solid var(--bo-border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.backoffice-shell .eq-stat-card:hover {
+  box-shadow: 0 4px 12px rgba(16, 32, 61, 0.08);
+  transform: translateY(-1px);
+}
+
+.backoffice-shell .eq-stat-icon { font-size: 20px; flex-shrink: 0; }
+.backoffice-shell .eq-stat-label { font-size: 10px; color: var(--bo-ink-muted); font-weight: 600; margin-bottom: 4px; }
+.backoffice-shell .eq-stat-value { font-family: var(--bo-font-display); font-size: 20px; font-weight: 700; color: var(--bo-ink); }
+.backoffice-shell .eq-stat-pct { font-size: 10px; color: var(--bo-ink-muted); margin-top: 2px; }
+
+.backoffice-shell .eq-stat-bar {
+  background: #EEF1F7;
+  height: 4px;
+  border-radius: 2px;
+  margin: 6px 0 2px;
+  overflow: hidden;
+}
+.backoffice-shell .eq-stat-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s;
+}
+
+.backoffice-shell .eq-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Filtres en cascade */
+.backoffice-shell .cascade-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.backoffice-shell .cascade-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--bo-ink-muted);
+}

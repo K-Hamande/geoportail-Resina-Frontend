@@ -1,55 +1,44 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet } from "../shared/backofficeApiClient";
 import { apiGet } from "../shared/apiClient";
-import { getStatusLabel } from "../shared/statusStyles";
-import Topbar from "./Topbar";
-
-function badgeClass(status) {
-  if (status === "KO") return "badge-ko";
-  if (status === "WARN") return "badge-warn";
-  if (status === "OK") return "badge-ok";
-  return "badge-unknown";
-}
 
 function DashboardPage() {
+  const { auth, setReduit, reduit } = useOutletContext();
   const { getAuthHeader } = useAuth();
   const [sites, setSites] = useState([]);
-  const [attentionDetail, setAttentionDetail] = useState([]);
+  const [equipementsTotal, setEquipementsTotal] = useState(0);
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
+  const [derniereMaj, setDerniereMaj] = useState(new Date());
+  const [rechercheAnomalie, setRechercheAnomalie] = useState("");
+  const [rechercheGlobale, setRechercheGlobale] = useState("");
 
   async function charger() {
     setChargement(true);
     try {
-      // Un SEUL appel supplementaire (en plus de la liste admin des sites) :
-      // /sites/map contient deja le statut ANPTIC ET le statut LAN de
-      // chaque site, calcules en une seule passe cote serveur. Plus
-      // besoin de refaire 2 appels par site en anomalie (avant : jusqu'a
-      // 1500+ requetes simultanees sur un reseau de cette taille -> le
-      // navigateur echouait avec "Failed to fetch").
-      const [adminSites, mapSites] = await Promise.all([
+      const [adminSites, mapSites, equipements] = await Promise.all([
         adminGet("/backoffice/api/v1/sites", getAuthHeader()),
         apiGet("/api/v1/sites/map"),
+        adminGet("/backoffice/api/v1/equipments/count", getAuthHeader()).catch(() => ({ total: 0 })),
       ]);
 
       const mapBySiteId = {};
       mapSites.forEach((s) => { mapBySiteId[s.siteId] = s; });
 
       const merged = adminSites.map((site) => {
-        const infosCarte = site.actif ? mapBySiteId[site.siteId] : null;
+        const infos = site.actif ? mapBySiteId[site.siteId] : null;
         return {
           ...site,
-          statutGlobal: infosCarte ? infosCarte.statutGlobal : null,
-          statutAnptic: infosCarte ? infosCarte.statutAnptic : null,
-          statutLan: infosCarte ? infosCarte.statutLan : null,
+          statutGlobal: infos ? infos.statutGlobal : null,
+          statutAnptic: infos ? infos.statutAnptic : null,
+          statutLan: infos ? infos.statutLan : null,
         };
       });
       setSites(merged);
-
-      const enAnomalie = merged.filter((s) => s.statutGlobal === "WARN" || s.statutGlobal === "KO");
-      setAttentionDetail(enAnomalie);
+      setEquipementsTotal(equipements.total ?? 0);
+      setDerniereMaj(new Date());
     } catch (err) {
       setErreur(err.message);
     } finally {
@@ -59,95 +48,296 @@ function DashboardPage() {
 
   useEffect(() => {
     charger();
+    const intervalle = setInterval(charger, 60000);
+    function exporterCSV() {
+    const enTete = ["Site", "Ville", "Statut ANPTIC", "Statut LAN", "Dernière alerte"];
+    const lignes = enAnomalie.map((s) => [
+      s.nom,
+      s.ville || "",
+      s.statutAnptic || "",
+      s.statutLan || "",
+      heureMaj,
+    ]);
+    const csv = [enTete, ...lignes]
+      .map((ligne) => ligne.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    // Le BOM \uFEFF force Excel a interpreter les accents correctement
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sites-en-anomalie-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+    return () => clearInterval(intervalle);
   }, []);
 
-  const sitesActifs = sites.filter((s) => s.actif).length;
-  const disponibles = sites.filter((s) => s.statutGlobal === "OK").length;
-  const degrades = sites.filter((s) => s.statutGlobal === "WARN").length;
-  const horsService = sites.filter((s) => s.statutGlobal === "KO").length;
+  const total = sites.length;
+  const actifs = sites.filter((s) => s.actif).length;
+  const ok = sites.filter((s) => s.statutGlobal === "OK").length;
+  const warn = sites.filter((s) => s.statutGlobal === "WARN").length;
+  const ko = sites.filter((s) => s.statutGlobal === "KO").length;
 
-  if (chargement) {
-    return <p style={{ padding: "32px" }}>Chargement...</p>;
+  const pctOk = actifs > 0 ? ((ok / actifs) * 100).toFixed(1) : "0";
+  const pctWarn = actifs > 0 ? ((warn / actifs) * 100).toFixed(1) : "0";
+  const pctKo = actifs > 0 ? ((ko / actifs) * 100).toFixed(1) : "0";
+  const pctActifs = total > 0 ? ((actifs / total) * 100).toFixed(1) : "0";
+
+  const enAnomalie = sites.filter((s) => s.statutGlobal === "WARN" || s.statutGlobal === "KO");
+  const anomalieFiltree = enAnomalie.filter((s) => {
+    const t = rechercheAnomalie.trim().toLowerCase();
+    if (!t) return true;
+    return s.nom.toLowerCase().includes(t) || (s.ville || "").toLowerCase().includes(t);
+  });
+
+  const nomAdmin = (auth?.username || "admin").split(".")[0].toUpperCase();
+  const initiales = nomAdmin.substring(0, 2);
+  const heureMaj = derniereMaj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  const rayon = 88;
+  const perimetre = 2 * Math.PI * rayon;
+  const arcOk = (ok / (actifs || 1)) * perimetre;
+  const arcWarn = (warn / (actifs || 1)) * perimetre;
+  const arcKo = (ko / (actifs || 1)) * perimetre;
+
+  const etatGlobal = pctOk >= 90 ? "excellent" : pctOk >= 70 ? "bon" : pctOk >= 40 ? "surveiller" : "critique";
+  const summaryTexts = {
+    excellent: { icon: "🏆", title: "Réseau global en excellente santé", text: "La majorité des sites RESINA sont opérationnels." },
+    bon: { icon: "👍", title: "Réseau global en bonne santé", text: `${ok} des ${actifs} sites actifs sont opérationnels.` },
+    surveiller: { icon: "⚠️", title: "Réseau global à surveiller", text: `Seulement ${ok} des ${actifs} sites actifs sont opérationnels.` },
+    critique: { icon: "🚨", title: "Réseau global en état critique", text: `Seulement ${ok} des ${actifs} sites actifs sont opérationnels.` },
+  };
+  const summary = summaryTexts[etatGlobal];
+
+  function exporterCSV() {
+    const enTete = ["Site", "Ville", "Statut ANPTIC", "Statut LAN", "Dernière alerte"];
+    const lignes = enAnomalie.map((s) => [
+      s.nom,
+      s.ville || "",
+      s.statutAnptic || "",
+      s.statutLan || "",
+      heureMaj,
+    ]);
+    const csv = [enTete, ...lignes]
+      .map((ligne) => ligne.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sites-en-anomalie-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
     <>
-      <Topbar title="Tableau de bord" subtitle={`Vue d'ensemble des sites et de l'état de la plateforme — ${sites.length} sites configurés`} onRefresh={charger} />
+      <div className="dashboard-topbar">
+        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)} aria-label="Basculer la barre latérale">☰</button>
+        <div className="topbar-titles">
+          <h1 className="topbar-title-welcome">Bienvenue, {nomAdmin} <span className="wave">👋</span></h1>
+          <p className="topbar-subtitle">GéoPortail RESINA — Supervision simplifiée du réseau national</p>
+        </div>
+        <div className="topbar-actions">
+          <div className="topbar-live-badge-compact">
+            <span className="live-dot"></span>
+            <div>
+              <div className="topbar-live-label">EN DIRECT</div>
+              <div className="topbar-live-sub">Données actualisées à {heureMaj}</div>
+            </div>
+          </div>
+          <div className="topbar-period">
+            <span>📅 30 derniers jours</span>
+            <span className="topbar-period-caret">▾</span>
+          </div>
+          <div className="topbar-search">
+            <span className="topbar-search-icon">🔍</span>
+            <input type="text" placeholder="Rechercher un site, équipement…"
+              value={rechercheGlobale} onChange={(e) => setRechercheGlobale(e.target.value)} />
+          </div>
+          <button
+            className="topbar-icon-btn"
+            title={`${enAnomalie.length} site(s) en anomalie`}
+            aria-label="Alertes"
+          >
+            🔔
+            {enAnomalie.length > 0 && (
+              <span className="topbar-badge topbar-badge-orange">
+                {enAnomalie.length > 99 ? "99+" : enAnomalie.length}
+              </span>
+            )}
+          </button>
+          <button className="topbar-icon-btn" title="Messages" aria-label="Messages">
+            ✉️<span className="topbar-badge topbar-badge-orange">3</span>
+          </button>
+          <div className="topbar-user">
+            <div className="topbar-user-avatar">{initiales}</div>
+            <div className="topbar-user-info">
+              <div className="topbar-user-name">Admin {nomAdmin}</div>
+              <div className="topbar-user-role">Super Administrateur</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="backoffice-content">
-        {erreur && <p style={{ color: "var(--color-ko)" }}>Erreur : {erreur}</p>}
+      <div className="backoffice-content dashboard-content">
+        {erreur && <p style={{ color: "var(--bo-ko)" }}>Erreur : {erreur}</p>}
 
-        <div className="kpi-grid">
-          <div className="kpi-card">
-            <div className="kpi-label">Sites actifs</div>
-            <div className="kpi-value">{sitesActifs}</div>
-            <div className="kpi-sub">sur {sites.length} sites configurés</div>
+        <div className="kpi-grid-v2">
+          <div className="kpi-card-v2">
+            <div className="kpi-card-icon kpi-icon-blue">🏢</div>
+            <div>
+              <div className="kpi-card-label">SITES CONFIGURÉS</div>
+              <div className="kpi-card-value">{total}</div>
+              <div className="kpi-card-sub">{pctActifs}% actifs</div>
+            </div>
           </div>
-          <div className="kpi-card">
-            <div className="kpi-label">Disponibles</div>
-            <div className="kpi-value kpi-ok-text">{disponibles}</div>
-            <div className="kpi-sub">connexion ANPTIC active</div>
+          <div className="kpi-card-v2">
+            <div className="kpi-card-icon kpi-icon-green">✓</div>
+            <div>
+              <div className="kpi-card-label">SITES OPÉRATIONNELS</div>
+              <div className="kpi-card-value kpi-value-green">{ok}</div>
+              <div className="kpi-card-sub">{pctOk}% du parc</div>
+            </div>
           </div>
-          <div className="kpi-card">
-            <div className="kpi-label">Dégradés</div>
-            <div className="kpi-value kpi-warn-text">{degrades}</div>
-            <div className="kpi-sub">débit inférieur au seuil</div>
+          <div className="kpi-card-v2">
+            <div className="kpi-card-icon kpi-icon-orange">⚠</div>
+            <div>
+              <div className="kpi-card-label">SITES DÉGRADÉS</div>
+              <div className="kpi-card-value kpi-value-orange">{warn}</div>
+              <div className="kpi-card-sub">{pctWarn}% du parc</div>
+            </div>
           </div>
-          <div className="kpi-card">
-            <div className="kpi-label">Hors service</div>
-            <div className="kpi-value kpi-ko-text">{horsService}</div>
-            <div className="kpi-sub">{attentionDetail.filter((s) => s.statutGlobal === "KO").slice(0, 5).map((s) => s.ville).join(", ") || "—"}</div>
+          <div className="kpi-card-v2">
+            <div className="kpi-card-icon kpi-icon-red">✕</div>
+            <div>
+              <div className="kpi-card-label">SITES HORS SERVICE</div>
+              <div className="kpi-card-value kpi-value-red">{ko}</div>
+              <div className="kpi-card-sub">{pctKo}% du parc</div>
+            </div>
+          </div>
+          <div className="kpi-card-v2">
+            <div className="kpi-card-icon kpi-icon-navy">🔌</div>
+            <div>
+              <div className="kpi-card-label">ÉQUIPEMENTS SUPERVISÉS</div>
+              <div className="kpi-card-value">{equipementsTotal.toLocaleString("fr-FR")}</div>
+              <div className="kpi-card-sub">Actifs sur le réseau</div>
+            </div>
           </div>
         </div>
 
-        <div className="panel">
+        <div className="health-panel">
+          <div className="health-panel-header">
+            <span className="health-icon">💚</span>
+            <h2>Santé globale du réseau RESINA</h2>
+          </div>
+          <div className="health-panel-body">
+            <div className="health-ring">
+              <svg viewBox="0 0 200 200" width="180" height="180">
+                <circle cx="100" cy="100" r={rayon} fill="none" stroke="#EEF1F7" strokeWidth="18"/>
+                {ok > 0 && (
+                  <circle cx="100" cy="100" r={rayon} fill="none" stroke="var(--bo-ok)" strokeWidth="18"
+                    strokeDasharray={`${arcOk} ${perimetre}`} transform="rotate(-90 100 100)" strokeLinecap="round"/>
+                )}
+                {warn > 0 && (
+                  <circle cx="100" cy="100" r={rayon} fill="none" stroke="var(--bo-warn)" strokeWidth="18"
+                    strokeDasharray={`${arcWarn} ${perimetre}`} strokeDashoffset={-arcOk}
+                    transform="rotate(-90 100 100)" strokeLinecap="round"/>
+                )}
+                {ko > 0 && (
+                  <circle cx="100" cy="100" r={rayon} fill="none" stroke="var(--bo-ko)" strokeWidth="18"
+                    strokeDasharray={`${arcKo} ${perimetre}`} strokeDashoffset={-(arcOk + arcWarn)}
+                    transform="rotate(-90 100 100)" strokeLinecap="round"/>
+                )}
+              </svg>
+              <div className="health-ring-center">
+                <div className="health-ring-value">{pctOk}%</div>
+                <div className="health-ring-label">Opérationnels</div>
+              </div>
+            </div>
+
+            <div className="health-legend-grid">
+              <div className="health-legend-card">
+                <div className="legend-card-title"><span className="dot ok"></span>Opérationnels</div>
+                <div className="legend-card-value">{pctOk}%</div>
+                <div className="legend-card-sub">{ok} sites</div>
+              </div>
+              <div className="health-legend-card">
+                <div className="legend-card-title"><span className="dot warn"></span>Dégradés</div>
+                <div className="legend-card-value">{pctWarn}%</div>
+                <div className="legend-card-sub">{warn} sites</div>
+              </div>
+              <div className="health-legend-card">
+                <div className="legend-card-title"><span className="dot ko"></span>Hors service</div>
+                <div className="legend-card-value">{pctKo}%</div>
+                <div className="legend-card-sub">{ko} sites</div>
+              </div>
+            </div>
+
+            <div className={`health-summary summary-${etatGlobal}`}>
+              <div className="health-summary-icon">{summary.icon}</div>
+              <div>
+                <div className="health-summary-title">{summary.title}</div>
+                <div className="health-summary-text">{summary.text}</div>
+                <div className="health-summary-bar">
+                  <div className="health-summary-bar-fill" style={{ width: `${pctOk}%` }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="panel attention-panel">
           <div className="panel-header">
-            <h2>Sites nécessitant une attention {attentionDetail.length > 0 ? `(${attentionDetail.length})` : ""}</h2>
+            <h2>🔔 Sites nécessitant une attention <span className="attention-count">{enAnomalie.length}</span></h2>
             <div className="panel-header-actions">
-              <Link to="/backoffice/sites" className="btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
-                + Ajouter un site
-              </Link>
+              <button className="btn-outline" onClick={charger}>⟳ Actualiser</button>
+              <button className="btn-outline" title="Exporter en CSV" onClick={exporterCSV}>⬇ Exporter</button> 
+              <div className="view-toggle">
+                <button className="view-toggle-btn active" title="Vue tableau">☰</button>
+                <button className="view-toggle-btn" title="Vue liste">≡</button>
+              </div>
+              <input type="text" placeholder="Rechercher un site…" className="attention-search"
+                value={rechercheAnomalie} onChange={(e) => setRechercheAnomalie(e.target.value)} />
             </div>
           </div>
 
-          {attentionDetail.length === 0 && <p>Aucun site en anomalie actuellement.</p>}
+          {enAnomalie.length === 0 && !chargement && <p>Aucun site en anomalie actuellement.</p>}
 
-          {attentionDetail.length > 0 && (
-            <table className="admin-table">
+          {anomalieFiltree.length > 0 && (
+            <table className="admin-table attention-table">
               <thead>
                 <tr>
-                  <th>Site</th>
-                  <th>Statut ANPTIC</th>
-                  <th>Statut LAN</th>
-                  <th>Dernière MAJ</th>
-                  {/* <th>Actions</th> */}
+                  <th>SITE</th>
+                  <th>LOCALISATION</th>
+                  <th>STATUT ANPTIC</th>
+                  <th>RÉSEAU LOCAL (LAN)</th>
+                  <th>DERNIÈRE ALERTE</th>
+                  <th>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
-                {/* Sur un reseau de cette taille, la liste complete peut etre
-                    tres longue (des centaines de sites) - on n'affiche que
-                    les 50 premiers dans le tableau, le compteur du titre
-                    donne le total reel. */}
-                {attentionDetail.slice(0, 50).map((site) => (
+                {anomalieFiltree.slice(0, 10).map((site) => (
                   <tr key={site.siteId}>
+                    <td><div className="site-name-cell">🏢 {site.nom}</div></td>
+                    <td>{site.ville}</td>
+                    <td><span className={`status-pill ${site.statutAnptic === "KO" ? "pill-ko" : site.statutAnptic === "WARN" ? "pill-warn" : "pill-ok"}`}>● {site.statutAnptic === "KO" ? "Hors service" : site.statutAnptic === "WARN" ? "Dégradé" : "Normal"}</span></td>
+                    <td><span className={`status-pill ${site.statutLan === "KO" ? "pill-ko" : site.statutLan === "WARN" ? "pill-warn" : "pill-ok"}`}>● {site.statutLan === "KO" ? "Hors service" : site.statutLan === "WARN" ? "Dégradé" : "Normal"}</span></td>
+                    <td className="alerte-cell">{heureMaj}</td>
                     <td>
-                      <div className="site-name-cell">{site.nom}</div>
-                      <div className="site-location-cell">{site.ville}</div>
+                      <Link to="/backoffice/sites" className="btn-voir">👁 Voir</Link>
                     </td>
-                    <td>
-                      <span className={`status-badge ${badgeClass(site.statutAnptic)}`}>{getStatusLabel(site.statutAnptic)}</span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${badgeClass(site.statutLan)}`}>{getStatusLabel(site.statutLan)}</span>
-                    </td>
-                    <td>à l'instant</td>
-                    {/* <td>
-                      <Link to="/backoffice/sites" className="btn btn-info" style={{ color: "white" }} >Voir →</Link>
-                    </td> */}
                   </tr>
                 ))}
               </tbody>
             </table>
+          )}
+
+          {anomalieFiltree.length > 0 && (
+            <p className="attention-footer">Affichage de {Math.min(10, anomalieFiltree.length)} site(s) sur {enAnomalie.length}</p>
           )}
         </div>
       </div>
