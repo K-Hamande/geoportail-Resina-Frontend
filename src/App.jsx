@@ -1,6 +1,8 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./shared/AuthContext";
 import { SiteSelectionProvider } from "./shared/SiteSelectionContext";
+import { estConnecteDecideur } from "./shared/decideurAuth";
+import DecideurLoginPage from "./decideur/DecideurLoginPage";
 import MonSitePage from "./decideur/MonSitePage";
 import CartePage from "./decideur/CartePage";
 import AlertesPage from "./decideur/AlertesPage";
@@ -14,22 +16,24 @@ import CartographyPage from "./backoffice/CartographyPage";
 import NotificationsAdminPage from "./backoffice/NotificationsAdminPage";
 import UsersPage from "./backoffice/UsersPage";
 import AuditLogPage from "./backoffice/AuditLogPage";
+import SiteFormPage from "./backoffice/SiteFormPage";
 import MinistryTokensPage from "./backoffice/MinistryTokensPage";
 import SupervisionPage from "./backoffice/SupervisionPage";
-import SiteFormPage from "./backoffice/SiteFormPage";
+import DecideurUsersPage from "./backoffice/DecideurUsersPage";
 
+// Protege les routes decideur : redirige vers /login si non connecte
+function RequireDecideurAuth({ children }) {
+  return estConnecteDecideur() ? children : <Navigate to="/login" replace />;
+}
 
-// Regroupe les 3 pages decideur pour qu'elles partagent toutes le meme
-// contexte de selection de site (header commun avec selecteur toujours
-// disponible) - le Provider a besoin d'etre A L'INTERIEUR du
-// BrowserRouter car il utilise useNavigate/useSearchParams.
 function DecideurRoutes() {
   return (
     <SiteSelectionProvider>
       <Routes>
-        <Route path="/" element={<MonSitePage />} />
-        <Route path="/carte" element={<CartePage />} />
-        <Route path="/alertes" element={<AlertesPage />} />
+        <Route path="/" element={<RequireDecideurAuth><MonSitePage /></RequireDecideurAuth>} />
+        <Route path="/carte" element={<RequireDecideurAuth><CartePage /></RequireDecideurAuth>} />
+        <Route path="/alertes" element={<RequireDecideurAuth><AlertesPage /></RequireDecideurAuth>} />
+        <Route path="/login" element={<DecideurLoginPage />} />
       </Routes>
     </SiteSelectionProvider>
   );
@@ -40,16 +44,11 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/*" element={<DecideurRoutesGuard />} />
+          <Route path="/*" element={<DecideurRoutes />} />
           <Route path="/backoffice/login" element={<LoginPage />} />
-
           <Route
             path="/backoffice"
-            element={
-              <ProtectedRoute>
-                <BackofficeLayout />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute><BackofficeLayout /></ProtectedRoute>}
           >
             <Route index element={<DashboardPage />} />
             <Route path="sites" element={<SitesPage />} />
@@ -58,25 +57,16 @@ function App() {
             <Route path="notifications" element={<NotificationsAdminPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="audit-log" element={<AuditLogPage />} />
-            <Route path="ministry-tokens" element={<MinistryTokensPage />} />
-            <Route path="supervision" element={<SupervisionPage />} />
             <Route path="sites/new" element={<SiteFormPage />} />
             <Route path="sites/:siteId/edit" element={<SiteFormPage />} />
+            <Route path="ministry-tokens" element={<MinistryTokensPage />} />
+            <Route path="supervision" element={<SupervisionPage />} />
+            <Route path="decideur-users" element={<DecideurUsersPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
-}
-
-// Petit garde-fou : "/backoffice/*" ne doit jamais tomber dans les
-// routes decideur (qui ne connaissent que "/", "/carte", "/alertes").
-// React Router evalue les <Route> dans l'ordre : comme "/backoffice/login"
-// et "/backoffice" sont declares AVANT "/*" dans <Routes> ci-dessus,
-// ils sont deja pris en priorite - ce composant ne gere donc que le
-// reste ("/", "/carte", "/alertes", et tout chemin decideur inconnu).
-function DecideurRoutesGuard() {
-  return <DecideurRoutes />;
 }
 
 export default App;

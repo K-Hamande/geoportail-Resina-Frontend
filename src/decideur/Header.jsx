@@ -1,4 +1,4 @@
-function Header({ nav, children }) {
+function Header({ nav, children, onLogout, nomComplet, role }) {
   return (
     <header className="app-header">
       <div className="flag-bar"></div>
@@ -16,6 +16,13 @@ function Header({ nav, children }) {
         </div>
         {nav}
         {children}
+        {nomComplet && (
+          <div className="header-user">
+            <span className="header-user-name">{nomComplet}</span>
+            <span className="header-user-role">{role === "LAMBDA" ? "Observateur" : "Décideur"}</span>
+            <button className="header-logout-btn" onClick={onLogout} title="Se déconnecter">⏻</button>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -3099,3 +3099,139 @@ body {
 
 .backoffice-shell .carto-site-nom { font-size: 12px; font-weight: 600; color: var(--bo-ink); }
 .backoffice-shell .carto-site-ville { font-size: 10.5px; color: var(--bo-ink-muted); }
+
+/* ==================================================================
+   PAGE DE CONNEXION DECIDEUR
+   ================================================================== */
+.decideur-login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0A3D7A, #072B57);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.decideur-login-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.decideur-login-logo {
+  margin: 0 auto 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.decideur-login-logo svg { border-radius: 12px; }
+
+.decideur-login-title {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #10203D;
+  margin: 0 0 6px;
+}
+
+.decideur-login-subtitle {
+  font-size: 13px;
+  color: #5B6478;
+  margin: 0 0 28px;
+}
+
+.decideur-login-field {
+  text-align: left;
+  margin-bottom: 16px;
+}
+.decideur-login-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5B6478;
+  margin-bottom: 6px;
+}
+.decideur-login-field input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #E1E6EF;
+  border-radius: 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.decideur-login-field input:focus { border-color: #C79A2E; outline: none; }
+
+.decideur-login-password { position: relative; }
+.decideur-login-password input { padding-right: 44px; }
+.decideur-login-eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.decideur-login-error {
+  background: #FCE8E8;
+  color: #D93535;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.decideur-login-btn {
+  width: 100%;
+  padding: 12px;
+  background: #0A3D7A;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.decideur-login-btn:hover:not(:disabled) { background: #072B57; }
+.decideur-login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.decideur-login-footer {
+  font-size: 11px;
+  color: #5B6478;
+  margin-top: 20px;
+}
+
+/* User connecte dans le header decideur */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.header-user-name { font-size: 12px; font-weight: 700; color: white; }
+.header-user-role { font-size: 10px; color: rgba(255,255,255,0.6); }
+.header-logout-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+}
+.header-logout-btn:hover { color: white; }

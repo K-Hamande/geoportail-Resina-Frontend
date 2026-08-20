@@ -1,23 +1,29 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiGet } from "../shared/apiClient";
 import { useSiteSelection } from "../shared/SiteSelectionContext";
+import { getDecideurAuth, clearDecideurAuth } from "../shared/decideurAuth";
 import Header from "./Header";
 import Footer from "./Footer";
 import BottomNav from "./BottomNav";
 import SiteSelector from "./SiteSelector";
 
-// Regroupe la structure commune aux 3 pages Decideur. Le selecteur de
-// site est desormais TOUJOURS affiche dans le header (avant : uniquement
-// sur "Mon site"), alimente par le contexte partage SiteSelectionContext.
 function DecideurLayout({ children }) {
   const [alertCount, setAlertCount] = useState(0);
   const { sites, siteId, choisirSite } = useSiteSelection();
+  const auth = getDecideurAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     apiGet("/api/v1/sites/map")
       .then((sites) => setAlertCount(sites.filter((s) => s.statutGlobal !== "OK").length))
       .catch(() => {});
   }, []);
+
+  function logout() {
+    clearDecideurAuth();
+    navigate("/login");
+  }
 
   const navDesktop = (
     <div className="nav-desktop-slot">
@@ -29,7 +35,9 @@ function DecideurLayout({ children }) {
 
   return (
     <div className="page">
-      <Header nav={navDesktop}>{selecteur}</Header>
+      <Header nav={navDesktop} onLogout={logout} nomComplet={auth?.nomComplet} role={auth?.role}>
+        {selecteur}
+      </Header>
       <div className="page-content">{children}</div>
       <Footer />
       <div className="nav-mobile-slot">
