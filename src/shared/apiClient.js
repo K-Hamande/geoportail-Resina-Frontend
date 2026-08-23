@@ -1,23 +1,23 @@
 import { getDecideurToken, clearDecideurAuth } from "./decideurAuth";
 
-// Client HTTP pour les appels API decideur.
-// Utilise uniquement le JWT (login/mot de passe) — l'ancien systeme
-// de tokens URL est supprime.
 export async function apiGet(path) {
   const token = getDecideurToken();
+  const estBackoffice = window.location.pathname.startsWith("/backoffice");
 
-  if (!token) {
-    // Pas de token : redirige seulement si on n'est pas deja sur /login
+  if (!token && !estBackoffice) {
     if (!window.location.pathname.startsWith("/login")) {
       window.location.href = "/login";
     }
     throw new Error("Non connecté");
   }
 
-  const response = await fetch(path, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (response.status === 401) {
+  const headers = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
+  const response = await fetch(path, { headers });
+
+  if (response.status === 401 && !estBackoffice) {
     clearDecideurAuth();
     if (!window.location.pathname.startsWith("/login")) {
       window.location.href = "/login";

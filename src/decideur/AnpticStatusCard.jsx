@@ -13,6 +13,16 @@ function boxClass(status) {
   return "ok";
 }
 
+// Couleur du libelle "Qualite", basee sur le niveau normalise renvoye
+// par le backend (AnpticStatusService.calculerQualite) - pas sur le
+// texte lui-meme, pour rester independant du libelle exact affiche.
+function qualiteColor(niveau) {
+  if (niveau === "KO") return "var(--color-ko)";
+  if (niveau === "WARN") return "var(--color-warn)";
+  if (niveau === "OK") return "var(--color-ok)";
+  return "var(--text-secondary, #5B6478)";
+}
+
 function AnpticStatusCard({ data }) {
   if (!data) {
     return <div className="status-card">Chargement...</div>;
@@ -61,8 +71,8 @@ function AnpticStatusCard({ data }) {
           </div>
           <div className="metric-box">
             <div className="metric-label">Qualité</div>
-            <div className="metric-value" style={{ fontFamily: "var(--font-main)", color: "var(--color-ok)" }}>
-              {data.qualiteSignal}
+            <div className="metric-value" style={{ fontFamily: "var(--font-main)", color: qualiteColor(data.qualiteNiveau) }}>
+              {data.qualiteSignal ?? "—"}
             </div>
           </div>
           <div className="metric-box">

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet } from "../shared/backofficeApiClient";
-import { apiGet } from "../shared/apiClient";
 
 function DashboardPage() {
   const { auth, setReduit, reduit } = useOutletContext();
@@ -18,24 +17,22 @@ function DashboardPage() {
   async function charger() {
     setChargement(true);
     try {
-      const [adminSites, mapSites, equipements] = await Promise.all([
+      const [adminSites, statuts, equipements] = await Promise.all([
         adminGet("/backoffice/api/v1/sites", getAuthHeader()),
-        apiGet("/api/v1/sites/map"),
+        adminGet("/backoffice/api/v1/sites/statuts", getAuthHeader()),
         adminGet("/backoffice/api/v1/equipments/count", getAuthHeader()).catch(() => ({ total: 0 })),
       ]);
 
-      const mapBySiteId = {};
-      mapSites.forEach((s) => { mapBySiteId[s.siteId] = s; });
+      const statutBySiteId = {};
+      statuts.forEach((s) => { statutBySiteId[s.siteId] = s; });
 
-      const merged = adminSites.map((site) => {
-        const infos = site.actif ? mapBySiteId[site.siteId] : null;
-        return {
-          ...site,
-          statutGlobal: infos ? infos.statutGlobal : null,
-          statutAnptic: infos ? infos.statutAnptic : null,
-          statutLan: infos ? infos.statutLan : null,
-        };
-      });
+      const merged = adminSites.map((site) => ({
+        ...site,
+        statutGlobal: statutBySiteId[site.siteId]?.statutGlobal ?? null,
+        statutAnptic: statutBySiteId[site.siteId]?.statutAnptic ?? null,
+        statutLan: statutBySiteId[site.siteId]?.statutLan ?? null,
+      }));
+
       setSites(merged);
       setEquipementsTotal(equipements.total ?? 0);
       setDerniereMaj(new Date());
@@ -49,28 +46,6 @@ function DashboardPage() {
   useEffect(() => {
     charger();
     const intervalle = setInterval(charger, 60000);
-    function exporterCSV() {
-    const enTete = ["Site", "Ville", "Statut ANPTIC", "Statut LAN", "Dernière alerte"];
-    const lignes = enAnomalie.map((s) => [
-      s.nom,
-      s.ville || "",
-      s.statutAnptic || "",
-      s.statutLan || "",
-      heureMaj,
-    ]);
-    const csv = [enTete, ...lignes]
-      .map((ligne) => ligne.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-
-    // Le BOM \uFEFF force Excel a interpreter les accents correctement
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sites-en-anomalie-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
     return () => clearInterval(intervalle);
   }, []);
 
@@ -102,28 +77,29 @@ function DashboardPage() {
   const arcWarn = (warn / (actifs || 1)) * perimetre;
   const arcKo = (ko / (actifs || 1)) * perimetre;
 
-  const etatGlobal = pctOk >= 90 ? "excellent" : pctOk >= 70 ? "bon" : pctOk >= 40 ? "surveiller" : "critique";
+  const etatGlobal = parseFloat(pctOk) >= 90 ? "excellent"
+    : parseFloat(pctOk) >= 70 ? "bon"
+    : parseFloat(pctOk) >= 40 ? "surveiller" : "critique";
+
   const summaryTexts = {
     excellent: { icon: "🏆", title: "Réseau global en excellente santé", text: "La majorité des sites RESINA sont opérationnels." },
     bon: { icon: "👍", title: "Réseau global en bonne santé", text: `${ok} des ${actifs} sites actifs sont opérationnels.` },
-    surveiller: { icon: "⚠️", title: "Réseau global à surveiller", text: `Seulement ${ok} des ${actifs} sites actifs sont opérationnels.` },
-    critique: { icon: "🚨", title: "Réseau global en état critique", text: `Seulement ${ok} des ${actifs} sites actifs sont opérationnels.` },
+    surveiller: { icon: "⚠️", title: "Réseau global à surveiller", text: `Seulement ${ok} des ${actifs} sites sont opérationnels.` },
+    critique: { icon: "🚨", title: "Réseau global en état critique", text: `Seulement ${ok} des ${actifs} sites sont opérationnels.` },
   };
   const summary = summaryTexts[etatGlobal];
 
   function exporterCSV() {
     const enTete = ["Site", "Ville", "Statut ANPTIC", "Statut LAN", "Dernière alerte"];
     const lignes = enAnomalie.map((s) => [
-      s.nom,
-      s.ville || "",
-      s.statutAnptic || "",
-      s.statutLan || "",
+      s.nom, s.ville || "",
+      s.statutAnptic || "Inconnu",
+      s.statutLan || "Inconnu",
       heureMaj,
     ]);
     const csv = [enTete, ...lignes]
       .map((ligne) => ligne.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
       .join("\n");
-
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -136,9 +112,9 @@ function DashboardPage() {
   return (
     <>
       <div className="dashboard-topbar">
-        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)} aria-label="Basculer la barre latérale">☰</button>
+        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
         <div className="topbar-titles">
-          <h1 className="topbar-title-welcome">Bienvenue, {nomAdmin} <span className="wave">👋</span></h1>
+          <h1 className="topbar-title-welcome">Bienvenue, Administrateur {nomAdmin} <span className="wave">👋</span></h1>
           <p className="topbar-subtitle">GéoPortail RESINA — Supervision simplifiée du réseau national</p>
         </div>
         <div className="topbar-actions">
@@ -158,11 +134,7 @@ function DashboardPage() {
             <input type="text" placeholder="Rechercher un site, équipement…"
               value={rechercheGlobale} onChange={(e) => setRechercheGlobale(e.target.value)} />
           </div>
-          <button
-            className="topbar-icon-btn"
-            title={`${enAnomalie.length} site(s) en anomalie`}
-            aria-label="Alertes"
-          >
+          <button className="topbar-icon-btn" title="Alertes">
             🔔
             {enAnomalie.length > 0 && (
               <span className="topbar-badge topbar-badge-orange">
@@ -170,7 +142,7 @@ function DashboardPage() {
               </span>
             )}
           </button>
-          <button className="topbar-icon-btn" title="Messages" aria-label="Messages">
+          <button className="topbar-icon-btn" title="Messages">
             ✉️<span className="topbar-badge topbar-badge-orange">3</span>
           </button>
           <div className="topbar-user">
@@ -186,6 +158,7 @@ function DashboardPage() {
       <div className="backoffice-content dashboard-content">
         {erreur && <p style={{ color: "var(--bo-ko)" }}>Erreur : {erreur}</p>}
 
+        {/* KPI */}
         <div className="kpi-grid-v2">
           <div className="kpi-card-v2">
             <div className="kpi-card-icon kpi-icon-blue">🏢</div>
@@ -229,6 +202,7 @@ function DashboardPage() {
           </div>
         </div>
 
+        {/* Santé globale */}
         <div className="health-panel">
           <div className="health-panel-header">
             <span className="health-icon">💚</span>
@@ -290,15 +264,16 @@ function DashboardPage() {
           </div>
         </div>
 
+        {/* Sites en anomalie */}
         <div className="panel attention-panel">
           <div className="panel-header">
             <h2>🔔 Sites nécessitant une attention <span className="attention-count">{enAnomalie.length}</span></h2>
             <div className="panel-header-actions">
               <button className="btn-outline" onClick={charger}>⟳ Actualiser</button>
-              <button className="btn-outline" title="Exporter en CSV" onClick={exporterCSV}>⬇ Exporter</button> 
+              <button className="btn-outline" onClick={exporterCSV}>⬇ Exporter</button>
               <div className="view-toggle">
-                <button className="view-toggle-btn active" title="Vue tableau">☰</button>
-                <button className="view-toggle-btn" title="Vue liste">≡</button>
+                <button className="view-toggle-btn active">☰</button>
+                <button className="view-toggle-btn">≡</button>
               </div>
               <input type="text" placeholder="Rechercher un site…" className="attention-search"
                 value={rechercheAnomalie} onChange={(e) => setRechercheAnomalie(e.target.value)} />
@@ -324,12 +299,18 @@ function DashboardPage() {
                   <tr key={site.siteId}>
                     <td><div className="site-name-cell">🏢 {site.nom}</div></td>
                     <td>{site.ville}</td>
-                    <td><span className={`status-pill ${site.statutAnptic === "KO" ? "pill-ko" : site.statutAnptic === "WARN" ? "pill-warn" : "pill-ok"}`}>● {site.statutAnptic === "KO" ? "Hors service" : site.statutAnptic === "WARN" ? "Dégradé" : "Normal"}</span></td>
-                    <td><span className={`status-pill ${site.statutLan === "KO" ? "pill-ko" : site.statutLan === "WARN" ? "pill-warn" : "pill-ok"}`}>● {site.statutLan === "KO" ? "Hors service" : site.statutLan === "WARN" ? "Dégradé" : "Normal"}</span></td>
-                    <td className="alerte-cell">{heureMaj}</td>
                     <td>
-                      <Link to="/backoffice/sites" className="btn-voir">👁 Voir</Link>
+                      <span className={`status-pill ${site.statutAnptic === "KO" ? "pill-ko" : site.statutAnptic === "WARN" ? "pill-warn" : "pill-ok"}`}>
+                        ● {site.statutAnptic === "KO" ? "Hors service" : site.statutAnptic === "WARN" ? "Dégradé" : "Normal"}
+                      </span>
                     </td>
+                    <td>
+                      <span className={`status-pill ${site.statutLan === "KO" ? "pill-ko" : site.statutLan === "WARN" ? "pill-warn" : "pill-ok"}`}>
+                        ● {site.statutLan === "KO" ? "Hors service" : site.statutLan === "WARN" ? "Dégradé" : "Normal"}
+                      </span>
+                    </td>
+                    <td className="alerte-cell">{heureMaj}</td>
+                    <td><Link to="/backoffice/sites" className="btn-voir">👁 Voir</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -337,7 +318,9 @@ function DashboardPage() {
           )}
 
           {anomalieFiltree.length > 0 && (
-            <p className="attention-footer">Affichage de {Math.min(10, anomalieFiltree.length)} site(s) sur {enAnomalie.length}</p>
+            <p className="attention-footer">
+              Affichage de {Math.min(10, anomalieFiltree.length)} site(s) sur {enAnomalie.length}
+            </p>
           )}
         </div>
       </div>

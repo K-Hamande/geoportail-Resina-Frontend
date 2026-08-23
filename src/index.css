@@ -3235,3 +3235,102 @@ body {
   padding: 2px 4px;
 }
 .header-logout-btn:hover { color: white; }
+
+/* ==================================================================
+   VUE UTILISATEUR LAMBDA
+   ================================================================== */
+.lambda-shell { min-height: 100vh; background: #F0F4FB; display: flex; flex-direction: column; }
+
+.lambda-header { background: linear-gradient(135deg, #0A3D7A, #072B57); }
+.lambda-header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; gap: 16px;
+}
+.lambda-brand { display: flex; align-items: center; gap: 10px; }
+.lambda-logo { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; }
+.lambda-title { font-size: 16px; font-weight: 700; color: white; }
+.lambda-subtitle { font-size: 11px; color: rgba(255,255,255,0.65); }
+
+.lambda-nav { display: flex; gap: 4px; }
+.lambda-nav-btn {
+  background: rgba(255,255,255,0.1); border: none; color: white;
+  padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.lambda-nav-btn:hover { background: rgba(255,255,255,0.2); }
+
+.lambda-user { display: flex; align-items: center; gap: 10px; }
+.lambda-user-name { font-size: 12px; color: rgba(255,255,255,0.85); font-weight: 600; }
+.lambda-logout { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 16px; cursor: pointer; }
+.lambda-logout:hover { color: white; }
+
+.lambda-content { padding: 20px 24px; flex: 1; }
+
+/* Stats */
+.lambda-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.lambda-stat-card {
+  background: white; border-radius: 12px; padding: 16px; text-align: center;
+  border-top: 3px solid #E1E6EF;
+}
+.lambda-stat-ok { border-top-color: #0D9B5A; }
+.lambda-stat-ko { border-top-color: #D93535; }
+.lambda-stat-value { font-size: 28px; font-weight: 700; color: #10203D; }
+.lambda-stat-label { font-size: 12px; color: #5B6478; margin-top: 4px; }
+
+/* Recherche */
+.lambda-search-bar {
+  display: flex; align-items: center; gap: 12px;
+  background: white; border-radius: 12px; padding: 10px 16px;
+  margin-bottom: 16px; border: 1px solid #E1E6EF;
+}
+.lambda-search-bar input {
+  flex: 1; border: none; outline: none; font-size: 14px; color: #10203D;
+}
+.lambda-search-count { font-size: 11px; color: #5B6478; font-weight: 600; white-space: nowrap; }
+
+/* Grille sites */
+.lambda-sites-grid { display: flex; flex-direction: column; gap: 8px; }
+
+.lambda-site-card {
+  background: white; border-radius: 10px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  border-left: 4px solid #E1E6EF;
+}
+.lambda-card-ok { border-left-color: #0D9B5A; }
+.lambda-card-ko { border-left-color: #D93535; }
+
+.lambda-site-statut { font-size: 20px; flex-shrink: 0; }
+.lambda-site-info { flex: 1; }
+.lambda-site-nom { font-size: 13px; font-weight: 700; color: #10203D; }
+.lambda-site-ville { font-size: 11px; color: #5B6478; }
+
+.lambda-site-badge {
+  padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+}
+.lambda-badge-ok { background: #E3F6EC; color: #0D9B5A; }
+.lambda-badge-ko { background: #FCE8E8; color: #D93535; }
+
+/* Pagination */
+.lambda-pagination {
+  display: flex; justify-content: center; align-items: center;
+  gap: 16px; padding: 20px; font-size: 13px; color: #5B6478;
+}
+.lambda-pagination button {
+  background: white; border: 1px solid #E1E6EF; padding: 8px 16px;
+  border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+.lambda-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.lambda-pagination button:not(:disabled):hover { background: #F0F4FB; }
+
+/* Carte lambda */
+.lambda-carte-wrapper { height: calc(100vh - 80px); border-radius: 12px; overflow: hidden; }
+
+@media (min-width: 768px) {
+  .lambda-sites-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1200px) {
+  .lambda-sites-grid { grid-template-columns: repeat(3, 1fr); }
+}

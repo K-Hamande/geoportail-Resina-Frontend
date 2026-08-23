@@ -22,7 +22,7 @@ function DecideurLoginPage() {
       });
 
       if (!response.ok) {
-        setErreur("Identifiants incorrects. Veuillez réessayer.");
+        setErreur("Identifiants ou mot de passe incorrects. Veuillez réessayer.");
         return;
       }
 
@@ -49,8 +49,8 @@ function DecideurLoginPage() {
           </svg>
         </div>
 
-        <h1 className="decideur-login-title">GéoPortail RESINA</h1>
-        <p className="decideur-login-subtitle">Supervision du réseau national — Accès décideur</p>
+        <h1 className="decideur-login-title">Accès décideur </h1>
+        <p className="decideur-login-subtitle">GéoPortail RESINA:Supervision du réseau national</p>
 
         <form onSubmit={handleSubmit}>
           <div className="decideur-login-field">
