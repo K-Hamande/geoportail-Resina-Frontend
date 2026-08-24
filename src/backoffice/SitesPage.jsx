@@ -14,6 +14,8 @@ function SitesPage() {
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [derniereMaj, setDerniereMaj] = useState(new Date());
+  const [synchronisation, setSynchronisation] = useState(false);
+  const [messageSync, setMessageSync] = useState(null);
 
   function charger() {
     setChargement(true);
@@ -30,8 +32,6 @@ function SitesPage() {
     charger();
   }, []);
 
-  // Retour a la page 1 quand la recherche change (sinon on peut se
-  // retrouver sur une page vide si les resultats filtrés sont peu nombreux)
   useEffect(() => {
     setPageCourante(1);
   }, [filtreNom]);
@@ -43,6 +43,31 @@ function SitesPage() {
       charger();
     } catch (err) {
       setErreur(err.message);
+    }
+  }
+
+  async function synchroniser() {
+    setSynchronisation(true);
+    setMessageSync(null);
+    setErreur(null);
+    try {
+      const sitesResult = await adminPost(
+        "/backoffice/api/v1/sites/import-netxms",
+        getAuthHeader()
+      );
+      const equipResult = await adminPost(
+        "/backoffice/api/v1/equipments/sync-netxms",
+        getAuthHeader()
+      );
+      setMessageSync(
+        `Synchronisation terminée : ${sitesResult.crees} site(s) créé(s), ${sitesResult.misAJour} mis à jour · ` +
+        `${equipResult.crees} équipement(s) créé(s), ${equipResult.misAJour} mis à jour.`
+      );
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setSynchronisation(false);
     }
   }
 
@@ -58,13 +83,13 @@ function SitesPage() {
 
   const nomAdmin = (auth?.username || "admin").split(".")[0].toUpperCase();
   const initiales = nomAdmin.substring(0, 2);
-  const heureMaj = derniereMaj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const heureMaj = derniereMaj.toLocaleTimeString("fr-FR", {
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  });
 
-  // Fabrique la liste des numeros de page a afficher, avec des "..." pour
-  // les grands sauts, style : 1 ... 4 5 [6] 7 8 ... 82
   function numerosPagesAffiches() {
     const pages = [];
-    const rayon = 2; // combien de pages on montre de chaque cote de la page courante
+    const rayon = 2;
     for (let i = 1; i <= totalPages; i++) {
       if (i === 1 || i === totalPages || (i >= pageActuelle - rayon && i <= pageActuelle + rayon)) {
         pages.push(i);
@@ -78,7 +103,7 @@ function SitesPage() {
   return (
     <>
       <div className="dashboard-topbar">
-        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)} aria-label="Basculer la barre latérale">☰</button>
+        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
         <div className="topbar-titles">
           <h1 className="topbar-title-welcome">Gestion des sites</h1>
           <p className="topbar-subtitle">{sites.length} sites configurés sur le réseau RESINA</p>
@@ -88,7 +113,7 @@ function SitesPage() {
             <span className="live-dot"></span>
             <div>
               <div className="topbar-live-label">EN DIRECT</div>
-              <div className="topbar-live-sub">Données actualisées à {heureMaj}</div>
+              <div className="topbar-live-sub">Actualisé à {heureMaj}</div>
             </div>
           </div>
           <button className="topbar-refresh" onClick={charger}>⟳ Actualiser</button>
@@ -104,18 +129,29 @@ function SitesPage() {
 
       <div className="backoffice-content dashboard-content">
         {erreur && <p style={{ color: "var(--bo-ko)" }}>Erreur : {erreur}</p>}
+        {messageSync && (
+          <p style={{ color: "var(--bo-ok)", background: "#E3F6EC", padding: "10px 14px",
+            borderRadius: "8px", marginBottom: "12px", fontSize: "13px" }}>
+            ✓ {messageSync}
+          </p>
+        )}
 
         <div className="panel attention-panel">
           <div className="panel-header">
-            <h2>🏢 Sites configurés <span className="attention-count" style={{ background: "var(--bo-primary)" }}>{sitesFiltres.length}</span></h2>
+            <h2>🏢 Sites configurés
+              <span className="attention-count" style={{ background: "var(--bo-primary)" }}>
+                {sitesFiltres.length}
+              </span>
+            </h2>
             <div className="panel-header-actions">
-              <input
-                className="attention-search"
-                placeholder="Rechercher un site…"
-                value={filtreNom}
-                onChange={(e) => setFiltreNom(e.target.value)}
-              />
-              <Link to="/backoffice/sites/new" className="topbar-refresh" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+              <input className="attention-search" placeholder="Rechercher un site…"
+                value={filtreNom} onChange={(e) => setFiltreNom(e.target.value)} />
+              <button className="btn-outline" disabled={synchronisation} onClick={synchroniser}
+                style={{ fontSize: "12px", whiteSpace: "nowrap" }}>
+                {synchronisation ? "Synchronisation…" : "⟳ Synchroniser NetXMS"}
+              </button>
+              <Link to="/backoffice/sites/new" className="topbar-refresh"
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", fontSize: "12px" }}>
                 + Nouveau site
               </Link>
             </div>
@@ -150,7 +186,9 @@ function SitesPage() {
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: "6px" }}>
-                          <Link to={`/backoffice/sites/${site.siteId}/edit`} className="btn-voir">✏️ Modifier</Link>
+                          <Link to={`/backoffice/sites/${site.siteId}/edit`} className="btn-voir">
+                            ✏️ Modifier
+                          </Link>
                           <button className="btn-voir" onClick={() => toggleActive(site)}>
                             {site.actif ? "⏸ Désactiver" : "▶ Activer"}
                           </button>
@@ -163,34 +201,30 @@ function SitesPage() {
 
               <div className="pagination-bar">
                 <div className="pagination-info">
-                  Affichage de <strong>{debut + 1}</strong> à <strong>{Math.min(fin, sitesFiltres.length)}</strong> sur <strong>{sitesFiltres.length}</strong> site(s)
+                  Affichage de <strong>{debut + 1}</strong> à{" "}
+                  <strong>{Math.min(fin, sitesFiltres.length)}</strong> sur{" "}
+                  <strong>{sitesFiltres.length}</strong> site(s)
                 </div>
                 <div className="pagination-controls">
-                  <button
-                    className="pagination-btn"
+                  <button className="pagination-btn"
                     onClick={() => setPageCourante(pageActuelle - 1)}
-                    disabled={pageActuelle === 1}
-                  >
+                    disabled={pageActuelle === 1}>
                     ← Précédent
                   </button>
                   {numerosPagesAffiches().map((n, idx) =>
                     n === "..." ? (
-                      <span key={`ellipsis-${idx}`} className="pagination-ellipsis">…</span>
+                      <span key={`e${idx}`} className="pagination-ellipsis">…</span>
                     ) : (
-                      <button
-                        key={n}
+                      <button key={n}
                         className={`pagination-btn ${n === pageActuelle ? "pagination-btn-active" : ""}`}
-                        onClick={() => setPageCourante(n)}
-                      >
+                        onClick={() => setPageCourante(n)}>
                         {n}
                       </button>
                     )
                   )}
-                  <button
-                    className="pagination-btn"
+                  <button className="pagination-btn"
                     onClick={() => setPageCourante(pageActuelle + 1)}
-                    disabled={pageActuelle === totalPages}
-                  >
+                    disabled={pageActuelle === totalPages}>
                     Suivant →
                   </button>
                 </div>
