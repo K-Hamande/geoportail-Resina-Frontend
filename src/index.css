@@ -2935,39 +2935,152 @@ body {
   color: var(--bo-ink-muted);
 }
 
-/* Champ de recherche ajoute au-dessus de chaque <select> (composant
-   SearchableSelect) pour filtrer les <option> affichees - utile des
-   qu'une liste depasse une poignee d'entrees (sites, ministeres,
-   villes...). */
-.searchable-select {
-  display: flex;
+
+
+/* Combobox "select" avec champ de recherche integre AU SEIN du menu
+   deroulant (composant SearchableSelect) : le controle ressemble a un
+   <select> classique, et le champ de recherche n'apparait qu'a
+   l'ouverture, a l'interieur du panneau - utile des qu'une liste
+   depasse une poignee d'entrees (sites, ministeres, villes...). */
+.searchable-select-combo {
+  position: relative;
+  display: inline-flex;
   flex-direction: column;
-  gap: 4px;
+  width: 100%;
 }
 
-.searchable-select-input {
-  padding: 6px 10px;
+.searchable-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 14px;
   background: white;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
 }
 
-.searchable-select-input::placeholder {
+.searchable-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.searchable-select-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchable-select-caret {
+  flex: none;
+  color: var(--color-text-muted, #8a8f9c);
+  font-size: 11px;
+}
+
+.searchable-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(16, 32, 61, 0.18);
+  max-height: 280px;
+  overflow: hidden;
+}
+
+.searchable-select-menu-search {
+  padding: 8px 10px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12.5px;
+  background: white;
+  outline: none;
+}
+
+.searchable-select-menu-search:focus {
+  background: var(--color-bg-soft, #f5f6f8);
+}
+
+.searchable-select-menu-list {
+  overflow-y: auto;
+}
+
+.searchable-select-menu-option {
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.searchable-select-menu-option:hover {
+  background: var(--color-bg-soft, #f5f6f8);
+}
+
+.searchable-select-menu-option.is-selected {
+  background: var(--color-primary-soft, #eef2ff);
+  font-weight: 600;
+}
+
+.searchable-select-menu-empty {
+  padding: 10px 12px;
+  font-size: 12.5px;
   color: var(--color-text-muted, #8a8f9c);
 }
 
-.backoffice-shell .searchable-select-input {
+/* <select> natif conserve mais visuellement invisible : garantit que la
+   validation HTML5 (required) et le comportement de formulaire restent
+   identiques a un <select> classique, sans etre visible a l'ecran. */
+.searchable-select-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
+
+.backoffice-shell .searchable-select-trigger {
   border: 1px solid var(--bo-border);
   border-radius: 8px;
-  font-size: 11.5px;
-  padding: 6px 10px;
+  font-size: 13px;
+  padding: 7px 10px;
+  color: var(--bo-ink);
   background: var(--bo-paper, white);
 }
 
-.backoffice-shell .searchable-select-input:focus {
+.backoffice-shell .searchable-select-trigger:focus {
   border-color: var(--bo-accent);
   outline: none;
+}
+
+.backoffice-shell .searchable-select-menu {
+  border-color: var(--bo-border);
+}
+
+.backoffice-shell .searchable-select-menu-search {
+  border-color: var(--bo-border);
+  font-size: 11.5px;
+}
+
+.backoffice-shell .searchable-select-menu-search:focus {
+  border-color: var(--bo-accent);
+}
+
+.backoffice-shell .searchable-select-menu-option {
+  font-size: 12px;
+  color: var(--bo-ink);
 }
 /* ==================================================================
    CARTOGRAPHIE BACKOFFICE — refonte complete
