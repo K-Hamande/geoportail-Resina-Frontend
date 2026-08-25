@@ -61,6 +61,9 @@ function EquipmentsPage() {
   const nomAdmin = (auth?.username || "admin").split(".")[0].toUpperCase();
   const initiales = nomAdmin.substring(0, 2);
 
+  // Chargement initial (et post-synchronisation) : recupere aussi les
+  // listes completes region/province/ville/ministere/structure qui
+  // alimentent les selects de filtre.
   async function chargerStats() {
     try {
       const data = await adminGet("/backoffice/api/v1/equipments/stats", getAuthHeader());
@@ -72,6 +75,27 @@ function EquipmentsPage() {
       setErreur(err.message);
     } finally {
       setChargement(false);
+    }
+  }
+
+  // Recalcule uniquement "Repartition par type d'equipement" (total +
+  // parType) selon les filtres geographiques/organisationnels actifs -
+  // sans toucher aux listes region/province/ville/ministere/structure
+  // (qui restent gerees par la cascade region->province->ville et
+  // ministere->structure) pour ne pas les ecraser.
+  async function rechargerRepartition() {
+    try {
+      const params = new URLSearchParams();
+      if (filtreRegion) params.append("region", filtreRegion);
+      if (filtreProvince) params.append("province", filtreProvince);
+      if (filtreVille) params.append("ville", filtreVille);
+      if (filtreMinistere) params.append("ministere", filtreMinistere);
+      if (filtreStructure) params.append("structure", filtreStructure);
+
+      const data = await adminGet("/backoffice/api/v1/equipments/stats?" + params.toString(), getAuthHeader());
+      setStats((prev) => (prev ? { ...prev, total: data.total, totalGlobal: data.totalGlobal, parType: data.parType } : data));
+    } catch (err) {
+      setErreur(err.message);
     }
   }
 
@@ -153,6 +177,14 @@ function EquipmentsPage() {
     chargerEquipements();
   }, [filtreRegion, filtreProvince, filtreVille, filtreMinistere, filtreStructure, filtreType]);
 
+  // La repartition par type ne depend pas du filtre "type" lui-meme
+  // (chaque carte doit rester visible pour pouvoir en choisir une autre),
+  // seulement des filtres geographiques/organisationnels.
+  useEffect(() => {
+    if (chargement) return; // evite un appel redondant avant le chargement initial
+    rechargerRepartition();
+  }, [filtreRegion, filtreProvince, filtreVille, filtreMinistere, filtreStructure]);
+
   async function synchroniser() {
     setSynchronisation(true);
     setMessageSync(null);
@@ -226,7 +258,7 @@ function EquipmentsPage() {
         <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
         <div className="topbar-titles">
           <h1 className="topbar-title-welcome">Équipements réseau</h1>
-          <p className="topbar-subtitle">{stats?.total ?? "..."} équipements synchronisés sur {stats?.regions?.length ?? 0} régions</p>
+          <p className="topbar-subtitle">{stats?.totalGlobal ?? "..."} équipements synchronisés sur {stats?.regions?.length ?? 0} régions</p>
         </div>
         <div className="topbar-actions">
           <button className="btn-primary" disabled={synchronisation} onClick={synchroniser}
