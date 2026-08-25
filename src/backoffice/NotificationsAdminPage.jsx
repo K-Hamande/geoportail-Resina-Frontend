@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminDelete } from "../shared/backofficeApiClient";
 import Topbar from "./Topbar";
+import SearchableSelect from "../shared/SearchableSelect";
 
 function NotificationsAdminPage() {
   const { getAuthHeader } = useAuth();
@@ -47,12 +48,12 @@ function NotificationsAdminPage() {
           <div className="panel-header">
             <h2>Destinataires enregistrés</h2>
             <div className="panel-header-actions">
-              <select value={siteFiltre} onChange={(e) => setSiteFiltre(e.target.value)}>
+              <SearchableSelect value={siteFiltre} onChange={(e) => setSiteFiltre(e.target.value)}>
                 <option value="">Tous les sites</option>
                 {sites.map((site) => (
                   <option key={site.siteId} value={site.siteId}>{site.nom}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
           </div>
 

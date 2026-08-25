@@ -2935,6 +2935,40 @@ body {
   color: var(--bo-ink-muted);
 }
 
+/* Champ de recherche ajoute au-dessus de chaque <select> (composant
+   SearchableSelect) pour filtrer les <option> affichees - utile des
+   qu'une liste depasse une poignee d'entrees (sites, ministeres,
+   villes...). */
+.searchable-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.searchable-select-input {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 12px;
+  background: white;
+}
+
+.searchable-select-input::placeholder {
+  color: var(--color-text-muted, #8a8f9c);
+}
+
+.backoffice-shell .searchable-select-input {
+  border: 1px solid var(--bo-border);
+  border-radius: 8px;
+  font-size: 11.5px;
+  padding: 6px 10px;
+  background: var(--bo-paper, white);
+}
+
+.backoffice-shell .searchable-select-input:focus {
+  border-color: var(--bo-accent);
+  outline: none;
+}
 /* ==================================================================
    CARTOGRAPHIE BACKOFFICE — refonte complete
    ================================================================== */
@@ -3334,3 +3368,230 @@ body {
 @media (min-width: 1200px) {
   .lambda-sites-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ==================================================================
+   BACKOFFICE — RESPONSIVE COMPLET (tablette + mobile)
+   ================================================================== */
+
+/* ---- TABLETTE (768px - 1024px) ---- */
+@media (max-width: 1024px) {
+
+  /* Sidebar plus etroite */
+  .backoffice-shell .sidebar { width: 220px; }
+
+  /* Topbar : cache les elements moins critiques */
+  .backoffice-shell .topbar-search { display: none; }
+  .backoffice-shell .topbar-period { display: none; }
+  .backoffice-shell .topbar-user-info { display: none; }
+  .backoffice-shell .topbar-live-sub { display: none; }
+
+  /* KPI : 3 colonnes au lieu de 5 */
+  .backoffice-shell .kpi-grid-v2 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Sante globale : empilement vertical */
+  .backoffice-shell .health-panel-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .backoffice-shell .health-legend-grid {
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+  }
+  .backoffice-shell .health-summary { max-width: 100%; width: 100%; }
+
+  /* Cartographie : empilement vertical */
+  .backoffice-shell .carto-layout {
+    grid-template-columns: 1fr;
+  }
+  .backoffice-shell .carto-list-col { max-height: 400px; }
+
+  /* Equipements : grille stats sur 3 colonnes */
+  .backoffice-shell .eq-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Dashboard topbar : compacte */
+  .backoffice-shell .dashboard-topbar { padding: 12px 16px; gap: 10px; }
+  .backoffice-shell .topbar-title-welcome { font-size: 16px; }
+
+  /* Contenu */
+  .backoffice-shell .dashboard-content { padding: 16px; gap: 14px; }
+  .backoffice-shell .backoffice-content { padding: 16px; }
+}
+
+/* ---- MOBILE (moins de 768px) ---- */
+@media (max-width: 768px) {
+
+  /* Sidebar cachee par defaut, glisse en overlay au clic du hamburger */
+  .backoffice-shell { height: auto; overflow: visible; }
+  .backoffice-shell .backoffice-main { height: auto; overflow-y: visible; }
+
+  .backoffice-shell .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    width: 280px;
+    overflow-y: auto;
+  }
+  .backoffice-shell .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Overlay sombre derriere la sidebar ouverte */
+  .backoffice-shell .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 299;
+  }
+
+  /* Topbar mobile fixe en haut */
+  .backoffice-shell .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bo-primary);
+    color: white;
+    padding: 14px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .backoffice-shell .mobile-topbar-title {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .backoffice-shell .mobile-menu-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Cache la topbar desktop sur mobile */
+  .backoffice-shell .dashboard-topbar { display: none; }
+
+  /* KPI : 2 colonnes */
+  .backoffice-shell .kpi-grid-v2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .backoffice-shell .kpi-card-v2 { padding: 12px 10px; gap: 8px; }
+  .backoffice-shell .kpi-card-value { font-size: 20px; }
+  .backoffice-shell .kpi-card-icon { width: 36px; height: 36px; font-size: 15px; }
+
+  /* Sante globale : vertical */
+  .backoffice-shell .health-panel-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 16px;
+  }
+  .backoffice-shell .health-legend-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  .backoffice-shell .health-summary { max-width: 100%; width: 100%; }
+  .backoffice-shell .health-ring { width: 140px; height: 140px; }
+  .backoffice-shell .health-ring svg { width: 140px; height: 140px; }
+  .backoffice-shell .health-ring-value { font-size: 22px; }
+
+  /* Tableaux : scroll horizontal */
+  .backoffice-shell .admin-table,
+  .backoffice-shell .attention-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Panel header : empilement vertical */
+  .backoffice-shell .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .backoffice-shell .panel-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .backoffice-shell .attention-search { min-width: 0; flex: 1; }
+
+  /* Pagination : compacte */
+  .backoffice-shell .pagination-bar {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .backoffice-shell .pagination-controls { flex-wrap: wrap; justify-content: center; }
+
+  /* Stats equipements : 2 colonnes */
+  .backoffice-shell .eq-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Cartographie : 1 colonne */
+  .backoffice-shell .carto-layout { grid-template-columns: 1fr; }
+  .backoffice-shell .carto-map { height: 40vh; min-height: 280px; }
+  .backoffice-shell .carto-list-col { max-height: 350px; }
+
+  /* Filtres cascade : 1 colonne */
+  .backoffice-shell .panel-header-actions select,
+  .backoffice-shell .panel-header-actions .attention-search {
+    width: 100%;
+  }
+  .backoffice-shell .cascade-group { width: 100%; }
+
+  /* Formulaires */
+  .backoffice-shell .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Modal : plein ecran sur mobile */
+  .backoffice-shell .modal-box {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .backoffice-shell .modal-overlay {
+    align-items: flex-end;
+  }
+
+  /* Dashboard content */
+  .backoffice-shell .dashboard-content { padding: 12px; gap: 12px; }
+  .backoffice-shell .backoffice-content { padding: 12px; }
+
+  /* Attention panel */
+  .backoffice-shell .attention-panel .panel-header h2 { font-size: 13px; }
+
+  /* Sidebar reduite : desactivee sur mobile (gestion par overlay) */
+  .backoffice-shell.sidebar-reduced .sidebar { transform: translateX(-100%); }
+  .backoffice-shell.sidebar-reduced .sidebar.open { transform: translateX(0); }
+}
+
+/* ---- TRES PETIT MOBILE (moins de 400px) ---- */
+@media (max-width: 400px) {
+  .backoffice-shell .kpi-grid-v2 { grid-template-columns: 1fr; }
+  .backoffice-shell .eq-stats-grid { grid-template-columns: 1fr; }
+  .backoffice-shell .health-legend-grid { grid-template-columns: 1fr; }
+}
+

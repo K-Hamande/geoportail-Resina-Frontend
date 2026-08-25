@@ -3,6 +3,7 @@ import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost, adminPut } from "../shared/backofficeApiClient";
 import { useOutletContext } from "react-router-dom";
 import Topbar from "./Topbar";
+import SearchableSelect from "../shared/SearchableSelect";
 
 const ROLE_LABELS = { DECIDEUR: "Décideur ministériel", LAMBDA: "Utilisateur lambda" };
 
@@ -137,18 +138,18 @@ function DecideurUsersPage() {
                   </div>
                   <div className="form-field">
                     <label>Rôle *</label>
-                    <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, ministere: "" })}>
+                    <SearchableSelect value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, ministere: "" })}>
                       <option value="DECIDEUR">Décideur ministériel</option>
                       <option value="LAMBDA">Utilisateur lambda</option>
-                    </select>
+                    </SearchableSelect>
                   </div>
                   {form.role === "DECIDEUR" && (
                     <div className="form-field">
                       <label>Ministère *</label>
-                      <select value={form.ministere} onChange={(e) => setForm({ ...form, ministere: e.target.value })} required>
+                      <SearchableSelect value={form.ministere} onChange={(e) => setForm({ ...form, ministere: e.target.value })} required>
                         <option value="">Choisir un ministère</option>
                         {ministeres.map((m) => <option key={m} value={m}>{m}</option>)}
-                      </select>
+                      </SearchableSelect>
                     </div>
                   )}
                 </div>

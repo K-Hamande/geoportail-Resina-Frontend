@@ -114,7 +114,7 @@ function DashboardPage() {
       <div className="dashboard-topbar">
         <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
         <div className="topbar-titles">
-          <h1 className="topbar-title-welcome">Bienvenue, Administrateur {nomAdmin} <span className="wave">👋</span></h1>
+          <h1 className="topbar-title-welcome">Bienvenue,{nomAdmin} <span className="wave">👋</span></h1>
           <p className="topbar-subtitle">GéoPortail RESINA — Supervision simplifiée du réseau national</p>
         </div>
         <div className="topbar-actions">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost, adminPut } from "../shared/backofficeApiClient";
+import SearchableSelect from "../shared/SearchableSelect";
 
 // Sert a la fois pour la CREATION (userAModifier absent) et la
 // MODIFICATION (userAModifier fourni) - evite de dupliquer tout le
@@ -99,11 +100,11 @@ function UserFormModal({ userAModifier, onClose, onSaved }) {
             )}
             <div className="form-field" style={{ gridColumn: "span 2" }}>
               <label>Rôle *</label>
-              <select name="role" value={form.role} onChange={handleChange}>
+              <SearchableSelect name="role" value={form.role} onChange={handleChange}>
                 <option value="SUPER_ADMIN">Super administrateur (accès global)</option>
                 <option value="ADMIN_DEST">Administrateur DEST</option>
                 <option value="ADMIN_DIG">Administrateur DIG</option>
-              </select>
+              </SearchableSelect>
             </div>
           </div>
 

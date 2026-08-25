@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost, adminPut } from "../shared/backofficeApiClient";
 import { useOutletContext } from "react-router-dom";
+import SearchableSelect from "../shared/SearchableSelect";
 
 const TYPE_LABELS = {
   BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur (Switch)",
@@ -284,53 +285,53 @@ function EquipmentsPage() {
               {/* Cascade géographique */}
               <div className="cascade-group">
                 <label className="cascade-label">Région</label>
-                <select className="attention-search" value={filtreRegion} onChange={(e) => onRegionChange(e.target.value)}>
+                <SearchableSelect selectClassName="attention-search" value={filtreRegion} onChange={(e) => onRegionChange(e.target.value)}>
                   <option value="">Toutes les régions</option>
                   {stats?.regions.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                </SearchableSelect>
               </div>
 
               <div className="cascade-group">
                 <label className="cascade-label">Province</label>
-                <select className="attention-search" value={filtreProvince}
+                <SearchableSelect selectClassName="attention-search" value={filtreProvince}
                   onChange={(e) => onProvinceChange(e.target.value)} disabled={!filtreRegion && provinces.length === 0}>
                   <option value="">Toutes les provinces</option>
                   {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
+                </SearchableSelect>
               </div>
 
               <div className="cascade-group">
                 <label className="cascade-label">Ville</label>
-                <select className="attention-search" value={filtreVille} onChange={(e) => setFiltreVille(e.target.value)}>
+                <SearchableSelect selectClassName="attention-search" value={filtreVille} onChange={(e) => setFiltreVille(e.target.value)}>
                   <option value="">Toutes les villes</option>
                   {villes.map((v) => <option key={v} value={clean(v)}>{clean(v)}</option>)}
-                </select>
+                </SearchableSelect>
               </div>
 
               {/* Cascade ministère */}
               <div className="cascade-group">
                 <label className="cascade-label">Ministère</label>
-                <select className="attention-search" value={filtreMinistere} onChange={(e) => onMinistereChange(e.target.value)}>
+                <SearchableSelect selectClassName="attention-search" value={filtreMinistere} onChange={(e) => onMinistereChange(e.target.value)}>
                   <option value="">Tous les ministères</option>
                   {stats?.ministeres.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
+                </SearchableSelect>
               </div>
 
               <div className="cascade-group">
                 <label className="cascade-label">Structure</label>
-                <select className="attention-search" value={filtreStructure} onChange={(e) => setFiltreStructure(e.target.value)}>
+                <SearchableSelect selectClassName="attention-search" value={filtreStructure} onChange={(e) => setFiltreStructure(e.target.value)}>
                   <option value="">Toutes les structures</option>
                   {structures.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                </SearchableSelect>
               </div>
 
               {/* Type */}
               <div className="cascade-group">
                 <label className="cascade-label">Type</label>
-                <select className="attention-search" value={filtreType} onChange={(e) => setFiltreType(e.target.value)}>
+                <SearchableSelect selectClassName="attention-search" value={filtreType} onChange={(e) => setFiltreType(e.target.value)}>
                   <option value="">Tous les types</option>
                   {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
+                </SearchableSelect>
               </div>
 
               {aDesFiltres && (

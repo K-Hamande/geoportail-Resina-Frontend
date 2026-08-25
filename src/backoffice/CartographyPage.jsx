@@ -4,6 +4,7 @@ import { useAuth } from "../shared/AuthContext";
 import { useOutletContext } from "react-router-dom";
 import { adminGet, adminPut } from "../shared/backofficeApiClient";
 import { buildColoredMarkerIcon } from "../shared/mapMarkers";
+import SearchableSelect from "../shared/SearchableSelect";
 
 const CENTRE_BURKINA_FASO = [12.2, -1.5];
 const TAILLE_PAGE = 20;
@@ -340,35 +341,35 @@ function CartographyPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "8px" }}>
                 <div className="cascade-group">
                   <label className="cascade-label">Région</label>
-                  <select className="attention-search" value={filtreRegion}
+                  <SearchableSelect selectClassName="attention-search" value={filtreRegion}
                     onChange={(e) => onRegionChange(e.target.value)}>
                     <option value="">Toutes</option>
                     {stats?.regions.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
+                  </SearchableSelect>
                 </div>
                 <div className="cascade-group">
                   <label className="cascade-label">Province</label>
-                  <select className="attention-search" value={filtreProvince}
+                  <SearchableSelect selectClassName="attention-search" value={filtreProvince}
                     onChange={(e) => onProvinceChange(e.target.value)}>
                     <option value="">Toutes</option>
                     {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
+                  </SearchableSelect>
                 </div>
                 <div className="cascade-group">
                   <label className="cascade-label">Ville</label>
-                  <select className="attention-search" value={filtreVille}
+                  <SearchableSelect selectClassName="attention-search" value={filtreVille}
                     onChange={(e) => { setFiltreVille(e.target.value); setPageCourante(1); }}>
                     <option value="">Toutes</option>
                     {villes.map((v) => <option key={v} value={clean(v)}>{clean(v)}</option>)}
-                  </select>
+                  </SearchableSelect>
                 </div>
                 <div className="cascade-group">
                   <label className="cascade-label">Ministère</label>
-                  <select className="attention-search" value={filtreMinistere}
+                  <SearchableSelect selectClassName="attention-search" value={filtreMinistere}
                     onChange={(e) => { setFiltreMinistere(e.target.value); setPageCourante(1); }}>
                     <option value="">Tous</option>
                     {stats?.ministeres.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
+                  </SearchableSelect>
                 </div>
               </div>
 

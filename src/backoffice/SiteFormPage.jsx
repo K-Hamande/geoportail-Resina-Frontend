@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost } from "../shared/backofficeApiClient";
+import SearchableSelect from "../shared/SearchableSelect";
 
 const TYPE_LABELS = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
 
@@ -135,7 +136,7 @@ function SiteFormPage() {
 
             <div className="form-field">
               <label>Région administrative</label>
-              <select name="regionAdministrative" value={form.regionAdministrative} onChange={handleChange}>
+              <SearchableSelect name="regionAdministrative" value={form.regionAdministrative} onChange={handleChange}>
                 <option value="">—</option>
                 <option value="Centre">Centre</option>
                 <option value="Hauts-Bassins">Hauts-Bassins</option>
@@ -150,7 +151,7 @@ function SiteFormPage() {
                 <option value="Est">Est</option>
                 <option value="Nord">Nord</option>
                 <option value="Plateau-Central">Plateau-Central</option>
-              </select>
+              </SearchableSelect>
             </div>
             <div className="form-field">
               <label>ID nœud NetXMS *</label>

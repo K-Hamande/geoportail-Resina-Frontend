@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost } from "../shared/backofficeApiClient";
 import Topbar from "./Topbar";
+import SearchableSelect from "../shared/SearchableSelect";
 
 function MinistryTokensPage() {
   const { getAuthHeader } = useAuth();
@@ -84,11 +85,11 @@ function MinistryTokensPage() {
           <form onSubmit={creerLien} className="form-grid">
             <div className="form-field">
               <label>Ministère *</label>
-              <select value={ministereChoisi} onChange={(e) => setMinistereChoisi(e.target.value)} required>
+              <SearchableSelect value={ministereChoisi} onChange={(e) => setMinistereChoisi(e.target.value)} required>
                 {ministeres.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
             <div className="form-field">
               <label>Libellé (optionnel)</label>

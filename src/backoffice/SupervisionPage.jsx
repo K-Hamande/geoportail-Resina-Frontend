@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPut, adminDelete } from "../shared/backofficeApiClient";
 import Topbar from "./Topbar";
+import SearchableSelect from "../shared/SearchableSelect";
 
 // §3.2.6b du CDC : configuration des parametres de supervision par site
 // (intervalle d'actualisation, seuils d'alerte, notifications push par
@@ -112,11 +113,11 @@ function SupervisionPage() {
             </div>
             <div className="form-field" style={{ maxWidth: "320px", marginBottom: 0 }}>
               <label>Site ({sitesFiltres.length})</label>
-              <select value={siteId || ""} onChange={(e) => setSiteId(e.target.value)}>
+              <SearchableSelect value={siteId || ""} onChange={(e) => setSiteId(e.target.value)}>
                 {sitesFiltres.map((s) => (
                   <option key={s.siteId} value={s.siteId}>{s.siteNom} — {s.ville}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
           </div>
 
