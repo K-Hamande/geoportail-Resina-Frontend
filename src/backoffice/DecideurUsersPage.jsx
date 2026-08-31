@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
-import { adminGet, adminPost, adminPut } from "../shared/backofficeApiClient";
+import { adminGet, adminPost, adminPut, adminDelete } from "../shared/backofficeApiClient";
 import { useOutletContext } from "react-router-dom";
 import Topbar from "./Topbar";
 import SearchableSelect from "../shared/SearchableSelect";
@@ -60,6 +60,18 @@ function DecideurUsersPage() {
     }
   }
 
+  async function supprimer(user) {
+    if (!window.confirm(`Supprimer définitivement le compte décideur "${user.login}" ? Cette action est irréversible.`)) {
+      return;
+    }
+    try {
+      await adminDelete(`/backoffice/api/v1/decideur-users/${user.id}`, getAuthHeader());
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }
+
   return (
     <>
       <Topbar title="Comptes Décideurs" subtitle="Gestion des accès à l'interface décideur" onRefresh={charger} />
@@ -105,6 +117,9 @@ function DecideurUsersPage() {
                     <button className="btn-voir" onClick={() => ouvrirModification(user)}>✏️ Modifier</button>
                     <button className="btn-voir" onClick={() => toggleActive(user)}>
                       {user.actif ? "⏸ Désactiver" : "▶ Activer"}
+                    </button>
+                    <button className="btn-voir" style={{ color: "var(--bo-ko, #D93535)" }} onClick={() => supprimer(user)}>
+                      🗑 Supprimer
                     </button>
                   </td>
                 </tr>

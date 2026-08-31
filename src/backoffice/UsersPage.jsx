@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
-import { adminGet, adminPost } from "../shared/backofficeApiClient";
+import { adminGet, adminPost, adminDelete } from "../shared/backofficeApiClient";
 import UserFormModal from "./UserFormModal";
 import ResetPasswordModal from "./ResetPasswordModal";
 import Topbar from "./Topbar";
@@ -12,7 +12,7 @@ const ROLE_LABELS = {
 };
 
 function UsersPage() {
-  const { getAuthHeader } = useAuth();
+  const { getAuthHeader, auth } = useAuth();
   const [users, setUsers] = useState([]);
   const [erreur, setErreur] = useState(null);
   const [modaleCreation, setModaleCreation] = useState(false);
@@ -33,6 +33,18 @@ function UsersPage() {
     const action = user.actif ? "deactivate" : "activate";
     try {
       await adminPost(`/backoffice/api/v1/users/${user.id}/${action}`, getAuthHeader());
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  }
+
+  async function supprimer(user) {
+    if (!window.confirm(`Supprimer définitivement le compte "${user.login}" ? Cette action est irréversible.`)) {
+      return;
+    }
+    try {
+      await adminDelete(`/backoffice/api/v1/users/${user.id}`, getAuthHeader());
       charger();
     } catch (err) {
       setErreur(err.message);
@@ -88,6 +100,15 @@ function UsersPage() {
                     </button>
                     <button className="btn btn-info" style={{ color: "white" }} onClick={() => toggleActive(user)}>
                       {user.actif ? "Désactiver" : "Activer"}
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      style={{ color: "white" }}
+                      disabled={user.login?.toLowerCase() === auth?.username?.toLowerCase()}
+                      title={user.login?.toLowerCase() === auth?.username?.toLowerCase() ? "Vous ne pouvez pas supprimer votre propre compte" : undefined}
+                      onClick={() => supprimer(user)}
+                    >
+                      Supprimer
                     </button>
                   </td>
                 </tr>

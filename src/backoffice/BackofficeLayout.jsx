@@ -93,7 +93,7 @@ function BackofficeLayout() {
             {/* <NavLink to="/backoffice/ministry-tokens" className={linkClass}>
               <span className="sidebar-link-icon">·</span>Liens Ministères
             </NavLink> */}
-                      <NavLink to="/backoffice/decideur-users" className={linkClass}><span className="sidebar-link-icon">👥</span>Comptes Décideurs</NavLink>
+                       <NavLink to="/backoffice/decideur-users" className={linkClass}><span className="sidebar-link-icon">👥</span>Comptes Décideurs</NavLink> 
           </SidebarGroup>
 
           <NavLink to="/backoffice/notifications" className={linkClass}>
