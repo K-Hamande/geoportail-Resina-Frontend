@@ -22,6 +22,8 @@ import SiteFormPage from "./backoffice/SiteFormPage";
 import MinistryTokensPage from "./backoffice/MinistryTokensPage";
 import SupervisionPage from "./backoffice/SupervisionPage";
 import DecideurUsersPage from "./backoffice/DecideurUsersPage";
+import MonProfilPage from "./backoffice/MonProfilPage";
+import RolesPage from "./backoffice/RolesPage";
 
 // Redirige vers /login si non connecte
 function RequireDecideurAuth({ children }) {
@@ -98,6 +100,8 @@ function App() {
             <Route path="ministry-tokens" element={<MinistryTokensPage />} />
             <Route path="supervision" element={<SupervisionPage />} />
             <Route path="decideur-users" element={<DecideurUsersPage />} />
+            <Route path="mon-profil" element={<MonProfilPage />} />
+            <Route path="roles" element={<RolesPage />} />
           </Route>
 
           {/* Decideur/Lambda - catch-all en dernier */}

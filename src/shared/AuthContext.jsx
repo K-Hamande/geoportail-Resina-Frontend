@@ -39,7 +39,27 @@ export function AuthProvider({ children }) {
     return "Basic " + btoa(`${auth.username}:${auth.password}`);
   }
 
-  const value = { auth, login, logout, getAuthHeader };
+  // Le Backoffice s'authentifie en HTTP Basic (identifiants renvoyes a
+  // CHAQUE requete, pas de token) : apres un changement de mot de passe
+  // reussi ("Mon profil"), il faut mettre a jour le mot de passe stocke
+  // localement immediatement, sinon le prochain appel API echoue avec
+  // l'ancien mot de passe. On reecrit dans le meme emplacement (localStorage
+  // si "se souvenir de moi" etait coche, sessionStorage sinon) pour ne pas
+  // deplacer la session.
+  function updatePassword(nouveauMotDePasse) {
+    setAuth((actuel) => {
+      if (!actuel) return actuel;
+      const misAJour = { ...actuel, password: nouveauMotDePasse };
+      if (localStorage.getItem(STORAGE_KEY)) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(misAJour));
+      } else {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(misAJour));
+      }
+      return misAJour;
+    });
+  }
+
+  const value = { auth, login, logout, getAuthHeader, updatePassword };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -93,15 +93,29 @@ function BackofficeLayout() {
             {/* <NavLink to="/backoffice/ministry-tokens" className={linkClass}>
               <span className="sidebar-link-icon">·</span>Liens Ministères
             </NavLink> */}
-                       <NavLink to="/backoffice/decideur-users" className={linkClass}><span className="sidebar-link-icon">👥</span>Comptes Décideurs</NavLink> 
+                      <NavLink to="/backoffice/decideur-users" className={linkClass}><span className="sidebar-link-icon">👥</span>Comptes Décideurs</NavLink>
           </SidebarGroup>
 
           <NavLink to="/backoffice/notifications" className={linkClass}>
             <span className="sidebar-link-icon">🔔</span>Notifications Push
           </NavLink>
-          <NavLink to="/backoffice/users" className={linkClass}>
-            <span className="sidebar-link-icon">👥</span>Utilisateurs
-          </NavLink>
+
+          <SidebarGroup
+            icon="👥"
+            label="Utilisateurs"
+            urls={["/backoffice/mon-profil", "/backoffice/users", "/backoffice/roles"]}
+          >
+            <NavLink to="/backoffice/mon-profil" className={linkClass}>
+              <span className="sidebar-link-icon">·</span>Mon profil
+            </NavLink>
+            <NavLink to="/backoffice/users" className={linkClass}>
+              <span className="sidebar-link-icon">·</span>Utilisateur
+            </NavLink>
+            <NavLink to="/backoffice/roles" className={linkClass}>
+              <span className="sidebar-link-icon">·</span>Rôles
+            </NavLink>
+          </SidebarGroup>
+
           <NavLink to="/backoffice/audit-log" className={linkClass}>
             <span className="sidebar-link-icon">📜</span>Journal d'activité
           </NavLink>
