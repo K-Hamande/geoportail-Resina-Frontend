@@ -14,7 +14,7 @@ function DecideurUsersPage() {
   const [erreur, setErreur] = useState(null);
   const [modaleOuverte, setModaleOuverte] = useState(false);
   const [userEdite, setUserEdite] = useState(null);
-  const [form, setForm] = useState({ login: "", nomComplet: "", motDePasse: "", role: "DECIDEUR", ministere: "" });
+  const [form, setForm] = useState({ login: "", nomComplet: "", email: "", motDePasse: "", role: "DECIDEUR", ministere: "" });
 
   function charger() {
     adminGet("/backoffice/api/v1/decideur-users", getAuthHeader()).then(setUsers).catch((e) => setErreur(e.message));
@@ -25,13 +25,13 @@ function DecideurUsersPage() {
 
   function ouvrirCreation() {
     setUserEdite(null);
-    setForm({ login: "", nomComplet: "", motDePasse: "", role: "DECIDEUR", ministere: "" });
+    setForm({ login: "", nomComplet: "", email: "", motDePasse: "", role: "DECIDEUR", ministere: "" });
     setModaleOuverte(true);
   }
 
   function ouvrirModification(user) {
     setUserEdite(user);
-    setForm({ login: user.login, nomComplet: user.nomComplet, motDePasse: "", role: user.role, ministere: user.ministere || "" });
+    setForm({ login: user.login, nomComplet: user.nomComplet, email: user.email || "", motDePasse: "", role: user.role, ministere: user.ministere || "" });
     setModaleOuverte(true);
   }
 
@@ -91,6 +91,8 @@ function DecideurUsersPage() {
               <tr>
                 <th>Login</th>
                 <th>Nom complet</th>
+                <th>Email</th>
+                <th>Alertes email</th>
                 <th>Rôle</th>
                 <th>Ministère</th>
                 <th>Statut</th>
@@ -102,6 +104,12 @@ function DecideurUsersPage() {
                 <tr key={user.id}>
                   <td className="site-name-cell">{user.login}</td>
                   <td>{user.nomComplet}</td>
+                  <td>{user.email || <span style={{ color: "var(--bo-ink-muted)" }}>—</span>}</td>
+                  <td>
+                    <span className={`status-pill ${user.alertesActivees ? "pill-ok" : "pill-warn"}`}>
+                      {user.alertesActivees ? "Activées" : "Désactivées"}
+                    </span>
+                  </td>
                   <td>
                     <span className={`status-pill ${user.role === "DECIDEUR" ? "pill-ok" : "pill-warn"}`}>
                       {ROLE_LABELS[user.role]}
@@ -144,6 +152,11 @@ function DecideurUsersPage() {
                   <div className="form-field" style={{ gridColumn: "span 2" }}>
                     <label>Nom complet *</label>
                     <input value={form.nomComplet} onChange={(e) => setForm({ ...form, nomComplet: e.target.value })} required />
+                  </div>
+                  <div className="form-field" style={{ gridColumn: "span 2" }}>
+                    <label>Email (pour les alertes)</label>
+                    <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder="decideur@exemple.bf" />
                   </div>
                   <div className="form-field" style={{ gridColumn: "span 2" }}>
                     <label>Mot de passe {userEdite ? "(laisser vide pour ne pas changer)" : "*"}</label>

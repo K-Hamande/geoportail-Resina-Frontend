@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiGet } from "../shared/apiClient";
+import { apiGet, apiPost } from "../shared/apiClient";
 import { getStatusColor } from "../shared/statusStyles";
 import { formaterTempsRelatif } from "../shared/timeFormat";
 import DecideurLayout from "./DecideurLayout";
@@ -32,6 +32,7 @@ function AlertesPage() {
   const [incidents, setIncidents] = useState([]);
   const [erreur, setErreur] = useState(null);
   const [idsLus, setIdsLus] = useState(chargerIdsLus);
+  const [alertesActivees, setAlertesActivees] = useState(false);
   const [banniereVisible, setBanniereVisible] = useState(
     sessionStorage.getItem(CLE_BANNIERE_MASQUEE) !== "true"
   );
@@ -43,6 +44,14 @@ function AlertesPage() {
   useEffect(() => {
     charger();
     const intervalle = setInterval(charger, 30000);
+
+    // Etat reel de la preference (persistant, cote serveur) - si le
+    // decideur a deja active les alertes sur un autre appareil/session,
+    // le bandeau ne doit pas reapparaitre.
+    apiGet("/api/v1/decideur/alertes")
+      .then((pref) => setAlertesActivees(pref.activees))
+      .catch(() => {});
+
     return () => clearInterval(intervalle);
   }, []);
 
@@ -60,19 +69,11 @@ function AlertesPage() {
   }
 
   function activerAlertes() {
-    const tokenSimule = "web-" + Math.random().toString(36).substring(2, 15);
-    const sitesUniques = [...new Map(incidents.map((i) => [i.siteId, i])).values()];
-
-    Promise.all(
-      sitesUniques.map((site) =>
-        fetch(`/api/v1/site/${site.siteId}/notifications/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Resina-Site-Token": "dev-token" },
-          body: JSON.stringify({ profil: "Décideur (test navigateur)", plateforme: "WEB", token: tokenSimule }),
-        })
-      )
-    )
-      .then(() => setBanniereVisible(false))
+    apiPost("/api/v1/decideur/alertes/activer")
+      .then((pref) => {
+        setAlertesActivees(pref.activees);
+        setBanniereVisible(false);
+      })
       .catch((err) => setErreur(err.message));
   }
 
@@ -87,10 +88,10 @@ function AlertesPage() {
     <DecideurLayout>
       {erreur && <p style={{ color: "var(--color-ko)" }}>Erreur : {erreur}</p>}
 
-      {banniereVisible && (
+      {!alertesActivees && banniereVisible && (
         <div className="alert-banner">
-          <p style={{ fontWeight: 700 }}>Activer les alertes en temps réel</p>
-          <p>Recevez une notification immédiate en cas de panne sur vos sites RESINA, même lorsque l'application est fermée.</p>
+          <p style={{ fontWeight: 700 }}>Activer les alertes par email</p>
+          <p>Recevez un email dès qu'une panne survient sur un site de votre ministère, même lorsque l'application est fermée.</p>
           <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
             <button className="btn-primary" onClick={activerAlertes}>Activer</button>
             <button className="btn-secondary" onClick={plusTard}>Plus tard</button>
