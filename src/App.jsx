@@ -24,6 +24,7 @@ import SupervisionPage from "./backoffice/SupervisionPage";
 import DecideurUsersPage from "./backoffice/DecideurUsersPage";
 import MonProfilPage from "./backoffice/MonProfilPage";
 import RolesPage from "./backoffice/RolesPage";
+import IncidentsHistoriquePage from "./backoffice/IncidentsHistoriquePage";
 
 // Redirige vers /login si non connecte
 function RequireDecideurAuth({ children }) {
@@ -102,6 +103,7 @@ function App() {
             <Route path="decideur-users" element={<DecideurUsersPage />} />
             <Route path="mon-profil" element={<MonProfilPage />} />
             <Route path="roles" element={<RolesPage />} />
+            <Route path="incidents-historique" element={<IncidentsHistoriquePage />} />
           </Route>
 
           {/* Decideur/Lambda - catch-all en dernier */}

@@ -85,7 +85,7 @@ function BackofficeLayout() {
           <SidebarGroup
             icon="🎛️"
             label="Supervision"
-            urls={["/backoffice/supervision", "/backoffice/ministry-tokens"]}
+            urls={["/backoffice/supervision", "/backoffice/ministry-tokens", "/backoffice/incidents-historique"]}
           >
             <NavLink to="/backoffice/supervision" className={linkClass}>
               <span className="sidebar-link-icon">·</span>Paramètres supervision
@@ -94,6 +94,9 @@ function BackofficeLayout() {
               <span className="sidebar-link-icon">·</span>Liens Ministères
             </NavLink> */}
                       <NavLink to="/backoffice/decideur-users" className={linkClass}><span className="sidebar-link-icon">👥</span>Comptes Décideurs</NavLink>
+            <NavLink to="/backoffice/incidents-historique" className={linkClass}>
+              <span className="sidebar-link-icon">·</span>Historique des incidents
+            </NavLink>
           </SidebarGroup>
 
           <NavLink to="/backoffice/notifications" className={linkClass}>

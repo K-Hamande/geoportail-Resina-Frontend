@@ -19,3 +19,22 @@ export function formaterTempsRelatif(dateIso) {
 
   return estHier ? `Hier ${heure}` : date.toLocaleDateString("fr-FR") + " " + heure;
 }
+
+// Formate une duree en minutes en texte lisible ("37 min", "3 h 20 min",
+// "2 j 4 h") - utilise notamment par la page "Historique des incidents"
+// pour afficher la duree d'une panne.
+export function formaterDureeMinutes(minutes) {
+  if (minutes < 1) return "< 1 min";
+  if (minutes < 60) return `${minutes} min`;
+
+  const heures = Math.floor(minutes / 60);
+  const minutesRestantes = minutes % 60;
+
+  if (heures < 24) {
+    return minutesRestantes > 0 ? `${heures} h ${minutesRestantes} min` : `${heures} h`;
+  }
+
+  const jours = Math.floor(heures / 24);
+  const heuresRestantes = heures % 24;
+  return heuresRestantes > 0 ? `${jours} j ${heuresRestantes} h` : `${jours} j`;
+}
