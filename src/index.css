@@ -1723,12 +1723,63 @@ body {
   color: var(--bo-primary-deep);
 }
 
-/* ---- JOURNAL D'ACTIVITE ---- */
-.backoffice-shell .audit-entry { border-bottom: 1px solid var(--bo-border); }
+/* ---- JOURNAL D'ACTIVITE : frise chronologique ---- */
+.backoffice-shell .audit-day-heading {
+  font-family: var(--bo-font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--bo-ink-muted);
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--bo-border);
+}
+.backoffice-shell .audit-day-heading:first-child { margin-top: 2px; }
+
+.backoffice-shell .audit-entry {
+  border-bottom: none;
+  border: 1px solid var(--bo-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: var(--bo-paper);
+  transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+}
+.backoffice-shell .audit-entry:last-child { margin-bottom: 0; }
+.backoffice-shell .audit-entry:hover {
+  box-shadow: 0 4px 14px rgba(16, 32, 61, 0.07);
+  transform: translateY(-1px);
+  border-color: rgba(10, 61, 122, 0.15);
+}
+
+.backoffice-shell .audit-icon-bubble {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.backoffice-shell .audit-category-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
 .backoffice-shell .audit-dot { background: var(--bo-accent); }
 .backoffice-shell .audit-line { color: var(--bo-ink-muted); }
 .backoffice-shell .audit-date, .backoffice-shell .audit-time { font-family: var(--bo-font-mono); }
-.backoffice-shell .audit-action { color: var(--bo-ink); }
+.backoffice-shell .audit-action { color: var(--bo-ink); margin-top: 3px; }
 
 /* ---- BADGES DE STATUT (scope backoffice uniquement) ---- */
 .backoffice-shell .status-badge { font-weight: 700; }
