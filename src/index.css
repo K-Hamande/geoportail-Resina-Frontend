@@ -3440,30 +3440,55 @@ body {
 /* ==================================================================
    VUE UTILISATEUR LAMBDA
    ================================================================== */
-.lambda-shell { min-height: 100vh; background: #F0F4FB; display: flex; flex-direction: column; }
-
-.lambda-header { background: linear-gradient(135deg, #0A3D7A, #072B57); }
+.lambda-header {
+  background: linear-gradient(135deg, #0A3D7A, #072B57);
+  /* Header fixe : reste visible en haut de l'ecran pendant le defilement
+     de la liste des sites. "sticky" plutot que "fixed" pour ne pas avoir
+     a compenser manuellement la hauteur avec un padding-top sur le
+     contenu (le flux normal du document suffit). */
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
 .lambda-header-inner {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 24px; gap: 16px;
 }
-.lambda-brand { display: flex; align-items: center; gap: 10px; }
-.lambda-logo { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; }
-.lambda-title { font-size: 16px; font-weight: 700; color: white; }
-.lambda-subtitle { font-size: 11px; color: rgba(255,255,255,0.65); }
+.lambda-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lambda-logo { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+.lambda-title { font-size: 16px; font-weight: 700; color: white; white-space: nowrap; }
+.lambda-subtitle { font-size: 11px; color: rgba(255,255,255,0.65); white-space: nowrap; }
 
-.lambda-nav { display: flex; gap: 4px; }
+.lambda-nav { display: flex; gap: 4px; flex-shrink: 0; }
 .lambda-nav-btn {
   background: rgba(255,255,255,0.1); border: none; color: white;
   padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: background 0.15s;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap;
 }
 .lambda-nav-btn:hover { background: rgba(255,255,255,0.2); }
 
-.lambda-user { display: flex; align-items: center; gap: 10px; }
+.lambda-user { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .lambda-user-name { font-size: 12px; color: rgba(255,255,255,0.85); font-weight: 600; }
-.lambda-logout { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 16px; cursor: pointer; }
-.lambda-logout:hover { color: white; }
+.lambda-logout {
+  background: rgba(255,255,255,0.1); border: none; color: white; font-size: 16px;
+  cursor: pointer; width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.lambda-logout:hover { background: rgba(255,255,255,0.2); }
+
+/* Mobile : les trois blocs (marque, navigation, utilisateur) ne
+   tiennent plus sur une seule ligne sans deborder de l'ecran - ce qui
+   poussait le bouton de deconnexion hors champ, a droite, invisible
+   sans defilement horizontal. On passe en 2 lignes : marque + bouton de
+   deconnexion en haut (toujours visible), navigation en dessous. */
+@media (max-width: 640px) {
+  .lambda-header-inner { flex-wrap: wrap; padding: 12px 16px; row-gap: 10px; }
+  .lambda-brand { order: 1; flex: 1; }
+  .lambda-user { order: 2; }
+  .lambda-user-name { display: none; }
+  .lambda-nav { order: 3; flex-basis: 100%; justify-content: center; }
+  .lambda-subtitle { display: none; }
+}
 
 .lambda-content { padding: 20px 24px; flex: 1; }
 

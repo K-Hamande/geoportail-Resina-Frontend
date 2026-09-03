@@ -27,7 +27,8 @@ function LambdaLayout({ children }) {
             <button className="lambda-nav-btn" onClick={() => navigate("/lambda/carte")}>🗺️ Carte</button>
           </nav>
           <div className="lambda-user">
-            <span className="lambda-user-name">{auth?.nomComplet}</span>
+            <span className="lambda-user-name">{auth?.role}</span>
+            
             <button className="lambda-logout" onClick={logout} title="Se déconnecter">⏻</button>
           </div>
         </div>
