@@ -2160,8 +2160,8 @@ body {
 .backoffice-shell.sidebar-reduced .sidebar { width: 72px; }
 .backoffice-shell.sidebar-reduced .sidebar-brand-texts,
 .backoffice-shell.sidebar-reduced .sidebar-section-title,
-.backoffice-shell.sidebar-reduced .sidebar-link:not(.sidebar-group-toggle) > *:not(.sidebar-link-icon),
-.backoffice-shell.sidebar-reduced .sidebar-group-toggle > *:not(.sidebar-link-icon),
+.backoffice-shell.sidebar-reduced .sidebar-link-label,
+.backoffice-shell.sidebar-reduced .sidebar-group-caret,
 .backoffice-shell.sidebar-reduced .sidebar-group-children,
 .backoffice-shell.sidebar-reduced .sidebar-footer { display: none; }
 .backoffice-shell.sidebar-reduced .sidebar-link { justify-content: center; }

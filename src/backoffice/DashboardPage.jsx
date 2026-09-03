@@ -14,7 +14,6 @@ function DashboardPage() {
   const [chargement, setChargement] = useState(true);
   const [derniereMaj, setDerniereMaj] = useState(new Date());
   const [rechercheAnomalie, setRechercheAnomalie] = useState("");
-  const [rechercheGlobale, setRechercheGlobale] = useState("");
 
   async function charger() {
     setChargement(true);
@@ -128,7 +127,7 @@ function DashboardPage() {
       <div className="dashboard-topbar">
         <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
         <div className="topbar-titles">
-          <h1 className="topbar-title-welcome">Bienvenue, Administrateur {nomAdmin} <span className="wave">👋</span></h1>
+          <h1 className="topbar-title-welcome">Bienvenue, {nomAdmin} <span className="wave">👋</span></h1>
           <p className="topbar-subtitle">GéoPortail RESINA — Supervision simplifiée du réseau national</p>
         </div>
         <div className="topbar-actions">
@@ -138,15 +137,6 @@ function DashboardPage() {
               <div className="topbar-live-label">EN DIRECT</div>
               <div className="topbar-live-sub">Données actualisées à {heureMaj}</div>
             </div>
-          </div>
-          <div className="topbar-period">
-            <span>📅 30 derniers jours</span>
-            <span className="topbar-period-caret">▾</span>
-          </div>
-          <div className="topbar-search">
-            <span className="topbar-search-icon">🔍</span>
-            <input type="text" placeholder="Rechercher un site, équipement…"
-              value={rechercheGlobale} onChange={(e) => setRechercheGlobale(e.target.value)} />
           </div>
           <button className="topbar-icon-btn" title="Alertes — voir l'historique des incidents"
             onClick={() => irOuRemonterEnHaut("/backoffice/incidents-historique")}>

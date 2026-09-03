@@ -14,7 +14,7 @@ function SidebarGroup({ icon, label, children, urls }) {
     <div className={`sidebar-group ${ouvert ? "open" : ""}`}>
       <button type="button" className="sidebar-link sidebar-group-toggle" onClick={() => setOuvert((v) => !v)}>
         <span className="sidebar-link-icon">{icon}</span>
-        {label}
+        <span className="sidebar-link-label">{label}</span>
         <span className="sidebar-group-caret">▸</span>
       </button>
       {ouvert && <div className="sidebar-group-children">{children}</div>}
@@ -63,7 +63,7 @@ function BackofficeLayout() {
 
         <nav className="sidebar-nav" onClick={(e) => { if (e.target.closest("a")) setMenuOuvert(false); }}>
           <NavLink to="/backoffice" end className={linkClass}>
-            <span className="sidebar-link-icon">🏢</span>Tableau de bord
+            <span className="sidebar-link-icon">🏢</span><span className="sidebar-link-label">Tableau de bord</span>
           </NavLink>
 
           <SidebarGroup
@@ -72,13 +72,13 @@ function BackofficeLayout() {
             urls={["/backoffice/sites", "/backoffice/equipments", "/backoffice/cartography"]}
           >
             <NavLink to="/backoffice/sites" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Gestion des sites
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Gestion des sites</span>
             </NavLink>
             <NavLink to="/backoffice/equipments" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Équipements LAN
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Équipements LAN</span>
             </NavLink>
             <NavLink to="/backoffice/cartography" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Cartographie
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Cartographie</span>
             </NavLink>
           </SidebarGroup>
 
@@ -88,19 +88,19 @@ function BackofficeLayout() {
             urls={["/backoffice/supervision", "/backoffice/ministry-tokens", "/backoffice/incidents-historique"]}
           >
             <NavLink to="/backoffice/supervision" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Paramètres supervision
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Paramètres supervision</span>
             </NavLink>
             {/* <NavLink to="/backoffice/ministry-tokens" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Liens Ministères
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Liens Ministères</span>
             </NavLink> */}
-                      <NavLink to="/backoffice/decideur-users" className={linkClass}><span className="sidebar-link-icon">👥</span>Comptes Décideurs</NavLink>
+                      <NavLink to="/backoffice/decideur-users" className={linkClass}><span className="sidebar-link-icon">👥</span><span className="sidebar-link-label">Comptes Décideurs</span></NavLink>
             <NavLink to="/backoffice/incidents-historique" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Historique des incidents
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Historique des incidents</span>
             </NavLink>
           </SidebarGroup>
 
           <NavLink to="/backoffice/notifications" className={linkClass}>
-            <span className="sidebar-link-icon">🔔</span>Notifications Push
+            <span className="sidebar-link-icon">🔔</span><span className="sidebar-link-label">Notifications Push</span>
           </NavLink>
 
           <SidebarGroup
@@ -109,18 +109,18 @@ function BackofficeLayout() {
             urls={["/backoffice/mon-profil", "/backoffice/users", "/backoffice/roles"]}
           >
             <NavLink to="/backoffice/mon-profil" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Mon profil
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Mon profil</span>
             </NavLink>
             <NavLink to="/backoffice/users" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Utilisateur
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Utilisateur</span>
             </NavLink>
             <NavLink to="/backoffice/roles" className={linkClass}>
-              <span className="sidebar-link-icon">·</span>Rôles
+              <span className="sidebar-link-icon">·</span><span className="sidebar-link-label">Rôles</span>
             </NavLink>
           </SidebarGroup>
 
           <NavLink to="/backoffice/audit-log" className={linkClass}>
-            <span className="sidebar-link-icon">📜</span>Journal d'activité
+            <span className="sidebar-link-icon">📜</span><span className="sidebar-link-label">Journal d'activité</span>
           </NavLink>
         </nav>
 
