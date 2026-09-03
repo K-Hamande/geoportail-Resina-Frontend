@@ -338,7 +338,7 @@ function CartographyPage() {
                 placeholder="Rechercher un site…" value={recherche}
                 onChange={(e) => { setRecherche(e.target.value); setPageCourante(1); }} />
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "8px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "6px", marginBottom: "8px" }}>
                 <div className="cascade-group">
                   <label className="cascade-label">Région</label>
                   <SearchableSelect selectClassName="attention-search" value={filtreRegion}
