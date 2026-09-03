@@ -34,11 +34,13 @@ function AuditLogPage() {
   const [entries, setEntries] = useState([]);
   const [nomsParLogin, setNomsParLogin] = useState({});
   const [erreur, setErreur] = useState(null);
+  const [chargement, setChargement] = useState(true);
 
   function charger() {
     // Les deux appels sont independants (le journal et la liste des
     // utilisateurs) - on les lance en parallele avec Promise.all,
     // exactement comme deja fait pour le Tableau de bord (Etape 9).
+    setChargement(true);
     Promise.all([
       adminGet("/backoffice/api/v1/audit-log", getAuthHeader()),
       adminGet("/backoffice/api/v1/users", getAuthHeader()),
@@ -50,7 +52,8 @@ function AuditLogPage() {
         users.forEach((u) => { lookup[u.login] = u.nomComplet; });
         setNomsParLogin(lookup);
       })
-      .catch((err) => setErreur(err.message));
+      .catch((err) => setErreur(err.message))
+      .finally(() => setChargement(false));
   }
 
   useEffect(() => {
@@ -93,6 +96,7 @@ function AuditLogPage() {
         title="Journal d'activité"
         subtitle="Traçabilité de toutes les modifications effectuées dans le Backoffice — conservation 90 jours minimum"
         onRefresh={charger}
+        chargement={chargement}
       />
 
       <div className="backoffice-content">

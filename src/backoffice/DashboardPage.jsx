@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet } from "../shared/backofficeApiClient";
 
 function DashboardPage() {
   const { auth, setReduit, reduit } = useOutletContext();
   const { getAuthHeader } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [sites, setSites] = useState([]);
   const [equipementsTotal, setEquipementsTotal] = useState(0);
   const [erreur, setErreur] = useState(null);
@@ -89,6 +91,18 @@ function DashboardPage() {
   };
   const summary = summaryTexts[etatGlobal];
 
+  // Navigue vers la page cible, sauf si on s'y trouve deja : dans ce cas
+  // on remonte simplement en haut de la page plutot que de ne rien faire
+  // (evite qu'un clic sur la cloche/l'avatar semble "casse" quand on est
+  // deja sur la page concernee).
+  function irOuRemonterEnHaut(chemin) {
+    if (location.pathname === chemin) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate(chemin);
+    }
+  }
+
   function exporterCSV() {
     const enTete = ["Site", "Ville", "Statut ANPTIC", "Statut LAN", "Dernière alerte"];
     const lignes = enAnomalie.map((s) => [
@@ -114,7 +128,7 @@ function DashboardPage() {
       <div className="dashboard-topbar">
         <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
         <div className="topbar-titles">
-          <h1 className="topbar-title-welcome">Bienvenue,{nomAdmin} <span className="wave">👋</span></h1>
+          <h1 className="topbar-title-welcome">Bienvenue, Administrateur {nomAdmin} <span className="wave">👋</span></h1>
           <p className="topbar-subtitle">GéoPortail RESINA — Supervision simplifiée du réseau national</p>
         </div>
         <div className="topbar-actions">
@@ -134,7 +148,8 @@ function DashboardPage() {
             <input type="text" placeholder="Rechercher un site, équipement…"
               value={rechercheGlobale} onChange={(e) => setRechercheGlobale(e.target.value)} />
           </div>
-          <button className="topbar-icon-btn" title="Alertes">
+          <button className="topbar-icon-btn" title="Alertes — voir l'historique des incidents"
+            onClick={() => irOuRemonterEnHaut("/backoffice/incidents-historique")}>
             🔔
             {enAnomalie.length > 0 && (
               <span className="topbar-badge topbar-badge-orange">
@@ -142,10 +157,10 @@ function DashboardPage() {
               </span>
             )}
           </button>
-          <button className="topbar-icon-btn" title="Messages">
-            ✉️<span className="topbar-badge topbar-badge-orange">3</span>
-          </button>
-          <div className="topbar-user">
+          <div className="topbar-user" role="button" tabIndex={0} title="Mon profil"
+            style={{ cursor: "pointer" }}
+            onClick={() => irOuRemonterEnHaut("/backoffice/mon-profil")}
+            onKeyDown={(e) => { if (e.key === "Enter") irOuRemonterEnHaut("/backoffice/mon-profil"); }}>
             <div className="topbar-user-avatar">{initiales}</div>
             <div className="topbar-user-info">
               <div className="topbar-user-name">Admin {nomAdmin}</div>
@@ -269,12 +284,10 @@ function DashboardPage() {
           <div className="panel-header">
             <h2>🔔 Sites nécessitant une attention <span className="attention-count">{enAnomalie.length}</span></h2>
             <div className="panel-header-actions">
-              <button className="btn-outline" onClick={charger}>⟳ Actualiser</button>
+              <button className="btn-outline" onClick={charger} disabled={chargement}>
+                {chargement ? "⟳ Actualisation..." : "⟳ Actualiser"}
+              </button>
               <button className="btn-outline" onClick={exporterCSV}>⬇ Exporter</button>
-              <div className="view-toggle">
-                <button className="view-toggle-btn active">☰</button>
-                <button className="view-toggle-btn">≡</button>
-              </div>
               <input type="text" placeholder="Rechercher un site…" className="attention-search"
                 value={rechercheAnomalie} onChange={(e) => setRechercheAnomalie(e.target.value)} />
             </div>
