@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost } from "../shared/backofficeApiClient";
+import SearchableSelect from "../shared/SearchableSelect";
 
 const TAILLE_PAGE = 20;
 
@@ -10,12 +11,14 @@ function SitesPage() {
   const { getAuthHeader } = useAuth();
   const [sites, setSites] = useState([]);
   const [filtreNom, setFiltreNom] = useState("");
+  const [filtreRegion, setFiltreRegion] = useState("");
+  const [filtreProvince, setFiltreProvince] = useState("");
+  const [filtreVille, setFiltreVille] = useState("");
+  const [filtreMinistere, setFiltreMinistere] = useState("");
   const [pageCourante, setPageCourante] = useState(1);
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [derniereMaj, setDerniereMaj] = useState(new Date());
-  const [synchronisation, setSynchronisation] = useState(false);
-  const [messageSync, setMessageSync] = useState(null);
 
   function charger() {
     setChargement(true);
@@ -32,9 +35,11 @@ function SitesPage() {
     charger();
   }, []);
 
+  // Retour a la page 1 quand un filtre change (sinon on peut se
+  // retrouver sur une page vide si les resultats filtrés sont peu nombreux)
   useEffect(() => {
     setPageCourante(1);
-  }, [filtreNom]);
+  }, [filtreNom, filtreRegion, filtreProvince, filtreVille, filtreMinistere]);
 
   async function toggleActive(site) {
     const action = site.actif ? "deactivate" : "activate";
@@ -46,34 +51,59 @@ function SitesPage() {
     }
   }
 
-  async function synchroniser() {
-    setSynchronisation(true);
-    setMessageSync(null);
-    setErreur(null);
-    try {
-      const sitesResult = await adminPost(
-        "/backoffice/api/v1/sites/import-netxms",
-        getAuthHeader()
-      );
-      const equipResult = await adminPost(
-        "/backoffice/api/v1/equipments/sync-netxms",
-        getAuthHeader()
-      );
-      setMessageSync(
-        `Synchronisation terminée : ${sitesResult.crees} site(s) créé(s), ${sitesResult.misAJour} mis à jour · ` +
-        `${equipResult.crees} équipement(s) créé(s), ${equipResult.misAJour} mis à jour.`
-      );
-      charger();
-    } catch (err) {
-      setErreur(err.message);
-    } finally {
-      setSynchronisation(false);
-    }
+  // Listes d'options pour les filtres region/province/ville/ministere,
+  // calculees directement a partir des sites deja charges (pas d'appel
+  // reseau supplementaire, la liste complete des sites est deja en
+  // memoire). Chaque niveau geographique se restreint selon les filtres
+  // deja actifs au-dessus de lui - meme principe de cascade que sur les
+  // pages Equipements et Cartographie (region -> province -> ville).
+  const regions = [...new Set(sites.map((s) => s.regionAdministrative).filter(Boolean))].sort();
+  const provinces = [...new Set(
+    sites
+      .filter((s) => !filtreRegion || s.regionAdministrative === filtreRegion)
+      .map((s) => s.province)
+      .filter(Boolean)
+  )].sort();
+  const villes = [...new Set(
+    sites
+      .filter((s) =>
+        (!filtreRegion || s.regionAdministrative === filtreRegion) &&
+        (!filtreProvince || s.province === filtreProvince)
+      )
+      .map((s) => s.ville)
+      .filter(Boolean)
+  )].sort();
+  const ministeres = [...new Set(sites.map((s) => s.ministere).filter(Boolean))].sort();
+
+  function onRegionChange(region) {
+    setFiltreRegion(region);
+    setFiltreProvince("");
+    setFiltreVille("");
   }
 
-  const sitesFiltres = sites.filter((site) =>
-    site.nom.toLowerCase().includes(filtreNom.toLowerCase())
-  );
+  function onProvinceChange(province) {
+    setFiltreProvince(province);
+    setFiltreVille("");
+  }
+
+  function effacerFiltres() {
+    setFiltreNom("");
+    setFiltreRegion("");
+    setFiltreProvince("");
+    setFiltreVille("");
+    setFiltreMinistere("");
+  }
+
+  const aDesFiltres = filtreNom || filtreRegion || filtreProvince || filtreVille || filtreMinistere;
+
+  const sitesFiltres = sites.filter((site) => {
+    if (filtreNom && !site.nom.toLowerCase().includes(filtreNom.toLowerCase())) return false;
+    if (filtreRegion && site.regionAdministrative !== filtreRegion) return false;
+    if (filtreProvince && site.province !== filtreProvince) return false;
+    if (filtreVille && site.ville !== filtreVille) return false;
+    if (filtreMinistere && site.ministere !== filtreMinistere) return false;
+    return true;
+  });
 
   const totalPages = Math.max(1, Math.ceil(sitesFiltres.length / TAILLE_PAGE));
   const pageActuelle = Math.min(pageCourante, totalPages);
@@ -83,13 +113,13 @@ function SitesPage() {
 
   const nomAdmin = (auth?.username || "admin").split(".")[0].toUpperCase();
   const initiales = nomAdmin.substring(0, 2);
-  const heureMaj = derniereMaj.toLocaleTimeString("fr-FR", {
-    hour: "2-digit", minute: "2-digit", second: "2-digit"
-  });
+  const heureMaj = derniereMaj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
+  // Fabrique la liste des numeros de page a afficher, avec des "..." pour
+  // les grands sauts, style : 1 ... 4 5 [6] 7 8 ... 82
   function numerosPagesAffiches() {
     const pages = [];
-    const rayon = 2;
+    const rayon = 2; // combien de pages on montre de chaque cote de la page courante
     for (let i = 1; i <= totalPages; i++) {
       if (i === 1 || i === totalPages || (i >= pageActuelle - rayon && i <= pageActuelle + rayon)) {
         pages.push(i);
@@ -103,7 +133,7 @@ function SitesPage() {
   return (
     <>
       <div className="dashboard-topbar">
-        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)}>☰</button>
+        <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)} aria-label="Basculer la barre latérale">☰</button>
         <div className="topbar-titles">
           <h1 className="topbar-title-welcome">Gestion des sites</h1>
           <p className="topbar-subtitle">{sites.length} sites configurés sur le réseau RESINA</p>
@@ -113,7 +143,7 @@ function SitesPage() {
             <span className="live-dot"></span>
             <div>
               <div className="topbar-live-label">EN DIRECT</div>
-              <div className="topbar-live-sub">Actualisé à {heureMaj}</div>
+              <div className="topbar-live-sub">Données actualisées à {heureMaj}</div>
             </div>
           </div>
           <button className="topbar-refresh" onClick={charger}>⟳ Actualiser</button>
@@ -129,29 +159,55 @@ function SitesPage() {
 
       <div className="backoffice-content dashboard-content">
         {erreur && <p style={{ color: "var(--bo-ko)" }}>Erreur : {erreur}</p>}
-        {messageSync && (
-          <p style={{ color: "var(--bo-ok)", background: "#E3F6EC", padding: "10px 14px",
-            borderRadius: "8px", marginBottom: "12px", fontSize: "13px" }}>
-            ✓ {messageSync}
-          </p>
-        )}
 
         <div className="panel attention-panel">
-          <div className="panel-header">
-            <h2>🏢 Sites configurés
-              <span className="attention-count" style={{ background: "var(--bo-primary)" }}>
-                {sitesFiltres.length}
-              </span>
-            </h2>
-            <div className="panel-header-actions">
-              <input className="attention-search" placeholder="Rechercher un site…"
-                value={filtreNom} onChange={(e) => setFiltreNom(e.target.value)} />
-              <button className="btn-outline" disabled={synchronisation} onClick={synchroniser}
-                style={{ fontSize: "12px", whiteSpace: "nowrap" }}>
-                {synchronisation ? "Synchronisation…" : "⟳ Synchroniser NetXMS"}
-              </button>
-              <Link to="/backoffice/sites/new" className="topbar-refresh"
-                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", fontSize: "12px" }}>
+          <div className="panel-header" style={{ flexWrap: "wrap", gap: "8px" }}>
+            <h2>🏢 Sites configurés <span className="attention-count" style={{ background: "var(--bo-primary)" }}>{sitesFiltres.length}</span></h2>
+            <div className="panel-header-actions" style={{ flexWrap: "wrap", gap: "8px" }}>
+              <input
+                className="attention-search"
+                placeholder="Rechercher un site…"
+                value={filtreNom}
+                onChange={(e) => setFiltreNom(e.target.value)}
+              />
+
+              <div className="cascade-group">
+                <label className="cascade-label">Région</label>
+                <SearchableSelect selectClassName="attention-search" value={filtreRegion} onChange={(e) => onRegionChange(e.target.value)}>
+                  <option value="">Toutes les régions</option>
+                  {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+                </SearchableSelect>
+              </div>
+
+              <div className="cascade-group">
+                <label className="cascade-label">Province</label>
+                <SearchableSelect selectClassName="attention-search" value={filtreProvince} onChange={(e) => onProvinceChange(e.target.value)}>
+                  <option value="">Toutes les provinces</option>
+                  {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
+                </SearchableSelect>
+              </div>
+
+              <div className="cascade-group">
+                <label className="cascade-label">Ville</label>
+                <SearchableSelect selectClassName="attention-search" value={filtreVille} onChange={(e) => setFiltreVille(e.target.value)}>
+                  <option value="">Toutes les villes</option>
+                  {villes.map((v) => <option key={v} value={v}>{v}</option>)}
+                </SearchableSelect>
+              </div>
+
+              <div className="cascade-group">
+                <label className="cascade-label">Ministère</label>
+                <SearchableSelect selectClassName="attention-search" value={filtreMinistere} onChange={(e) => setFiltreMinistere(e.target.value)}>
+                  <option value="">Tous les ministères</option>
+                  {ministeres.map((m) => <option key={m} value={m}>{m}</option>)}
+                </SearchableSelect>
+              </div>
+
+              {aDesFiltres && (
+                <button className="btn-outline" onClick={effacerFiltres}>✕ Effacer les filtres</button>
+              )}
+
+              <Link to="/backoffice/sites/new" className="topbar-refresh" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
                 + Nouveau site
               </Link>
             </div>
@@ -165,7 +221,8 @@ function SitesPage() {
                 <thead>
                   <tr>
                     <th>SITE</th>
-                    <th>VILLE</th>
+                    <th>LOCALISATION</th>
+                    <th>MINISTÈRE</th>
                     <th>NŒUD NETXMS</th>
                     <th>ÉQUIPEMENTS</th>
                     <th>STATUT</th>
@@ -176,7 +233,17 @@ function SitesPage() {
                   {sitesPage.map((site) => (
                     <tr key={site.siteId}>
                       <td><div className="site-name-cell">🏢 {site.nom}</div></td>
-                      <td>{site.ville}</td>
+                      <td>
+                        <div>{site.ville}</div>
+                        <div className="site-location-cell">
+                          {[site.province, site.regionAdministrative].filter(Boolean).join(" · ") || "—"}
+                        </div>
+                      </td>
+                      <td style={{ maxWidth: "200px" }}>
+                        <span title={site.ministere || ""} style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {site.ministere || "—"}
+                        </span>
+                      </td>
                       <td className="alerte-cell">{site.netxmsNodeId ?? "—"}</td>
                       <td>{site.nombreEquipements ?? 0}</td>
                       <td>
@@ -185,11 +252,9 @@ function SitesPage() {
                         </span>
                       </td>
                       <td>
-                        <div style={{ display: "flex", gap: "6px" }}>
-                          <Link to={`/backoffice/sites/${site.siteId}/edit`} className="btn-voir">
-                            ✏️ Modifier
-                          </Link>
-                          <button className="btn-voir" onClick={() => toggleActive(site)}>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "nowrap" }}>
+                          <Link to={`/backoffice/sites/${site.siteId}/edit`} className="btn-voir" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>✏️ Modifier</Link>
+                          <button className="btn-voir" style={{ whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => toggleActive(site)}>
                             {site.actif ? "⏸ Désactiver" : "▶ Activer"}
                           </button>
                         </div>
@@ -201,30 +266,34 @@ function SitesPage() {
 
               <div className="pagination-bar">
                 <div className="pagination-info">
-                  Affichage de <strong>{debut + 1}</strong> à{" "}
-                  <strong>{Math.min(fin, sitesFiltres.length)}</strong> sur{" "}
-                  <strong>{sitesFiltres.length}</strong> site(s)
+                  Affichage de <strong>{debut + 1}</strong> à <strong>{Math.min(fin, sitesFiltres.length)}</strong> sur <strong>{sitesFiltres.length}</strong> site(s)
                 </div>
                 <div className="pagination-controls">
-                  <button className="pagination-btn"
+                  <button
+                    className="pagination-btn"
                     onClick={() => setPageCourante(pageActuelle - 1)}
-                    disabled={pageActuelle === 1}>
+                    disabled={pageActuelle === 1}
+                  >
                     ← Précédent
                   </button>
                   {numerosPagesAffiches().map((n, idx) =>
                     n === "..." ? (
-                      <span key={`e${idx}`} className="pagination-ellipsis">…</span>
+                      <span key={`ellipsis-${idx}`} className="pagination-ellipsis">…</span>
                     ) : (
-                      <button key={n}
+                      <button
+                        key={n}
                         className={`pagination-btn ${n === pageActuelle ? "pagination-btn-active" : ""}`}
-                        onClick={() => setPageCourante(n)}>
+                        onClick={() => setPageCourante(n)}
+                      >
                         {n}
                       </button>
                     )
                   )}
-                  <button className="pagination-btn"
+                  <button
+                    className="pagination-btn"
                     onClick={() => setPageCourante(pageActuelle + 1)}
-                    disabled={pageActuelle === totalPages}>
+                    disabled={pageActuelle === totalPages}
+                  >
                     Suivant →
                   </button>
                 </div>
@@ -233,7 +302,7 @@ function SitesPage() {
           )}
 
           {!chargement && sitesFiltres.length === 0 && (
-            <p>Aucun site trouvé pour cette recherche.</p>
+            <p>Aucun site trouvé pour ces filtres.</p>
           )}
         </div>
       </div>

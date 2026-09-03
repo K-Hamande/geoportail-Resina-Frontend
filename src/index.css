@@ -2626,11 +2626,14 @@ body {
 
 /* Pills de statut plus arrondis dans le tableau */
 .backoffice-shell .status-pill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .backoffice-shell .pill-ok { background: #E3F6EC; color: var(--bo-ok); }
 .backoffice-shell .pill-warn { background: #FDF1E0; color: var(--bo-warn); }
@@ -3707,4 +3710,3 @@ body {
   .backoffice-shell .eq-stats-grid { grid-template-columns: 1fr; }
   .backoffice-shell .health-legend-grid { grid-template-columns: 1fr; }
 }
-
