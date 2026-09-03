@@ -3562,6 +3562,210 @@ body {
 }
 
 /* ==================================================================
+   PAGE ROLES (Backoffice) - documentation statique des roles admin
+   ================================================================== */
+
+.backoffice-shell .roles-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(135deg, var(--bo-primary), var(--bo-primary-deep));
+  color: white;
+  border-radius: 16px;
+  padding: 22px 26px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 28px rgba(10, 61, 122, 0.22);
+}
+
+.backoffice-shell .roles-hero-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.backoffice-shell .roles-hero-title {
+  font-family: var(--bo-font-display);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.backoffice-shell .roles-hero-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.86);
+  max-width: 640px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.backoffice-shell .roles-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 900px) {
+  .backoffice-shell .roles-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.backoffice-shell .role-card {
+  background: var(--bo-paper);
+  border: 1px solid var(--bo-border);
+  border-top: 3px solid var(--role-accent, var(--bo-primary));
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.backoffice-shell .role-card:hover {
+  box-shadow: 0 10px 26px rgba(16, 32, 61, 0.09);
+  transform: translateY(-2px);
+}
+
+.backoffice-shell .role-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.backoffice-shell .role-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+}
+
+.backoffice-shell .role-card-code {
+  font-family: var(--bo-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--bo-ink-muted);
+  background: var(--bo-canvas);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.backoffice-shell .role-card-title {
+  font-family: var(--bo-font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--bo-ink);
+  margin: 0 0 2px;
+}
+
+.backoffice-shell .role-card-tagline {
+  font-size: 12px;
+  color: var(--bo-ink-muted);
+  margin: 0 0 14px;
+}
+
+.backoffice-shell .role-card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.backoffice-shell .role-card-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--bo-ink);
+}
+
+.backoffice-shell .role-card-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--role-accent, var(--bo-ok));
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.backoffice-shell .role-card-highlight {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 9px 12px;
+  border-radius: 10px;
+}
+
+.backoffice-shell .roles-matrix-panel { margin-bottom: 20px; }
+
+.backoffice-shell .roles-matrix-wrap { overflow-x: auto; }
+
+.backoffice-shell .roles-matrix-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.backoffice-shell .roles-matrix-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.backoffice-shell .roles-matrix-label { color: var(--bo-ink); font-weight: 500; }
+
+.backoffice-shell .roles-matrix-check {
+  color: var(--bo-ok);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.backoffice-shell .roles-matrix-cross {
+  color: var(--bo-ink-muted);
+  opacity: 0.5;
+  font-weight: 700;
+}
+
+.backoffice-shell .roles-matrix-text {
+  font-size: 11.5px;
+  color: var(--bo-ink-muted);
+  font-weight: 600;
+}
+
+.backoffice-shell .roles-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--bo-primary-soft);
+  color: var(--bo-primary-deep);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.backoffice-shell .roles-note-icon { font-size: 15px; flex-shrink: 0; }
+
+.backoffice-shell .roles-note p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ==================================================================
    BACKOFFICE — RESPONSIVE COMPLET (tablette + mobile)
    ================================================================== */
 
