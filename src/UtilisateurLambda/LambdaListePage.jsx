@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, GeoJSON, ZoomControl } from "react-leaflet";
 import L from "leaflet";
-import { LandPlot, Building2, Cable } from "lucide-react";
+import { Menu, UserRound, ChevronDown, LogOut, Building2, Landmark, Cable } from "lucide-react";
 import { apiGet } from "../shared/apiClient";
 import ErrorBanner from "../shared/ErrorBanner";
-import LambdaLayout from "./LambdaLayout";
+import { estConnecteDecideur, getDecideurAuth, clearDecideurAuth } from "../shared/decideurAuth";
 
-// Page d'accueil publique de la partie lambda : contenu de la maquette
-// "Page public_Geoportail.html" (couverture RESINA par commune - carte +
-// statistiques nationales), mais habille avec l'identite visuelle de
-// l'appli (memes classes .lambda-*, memes couleurs que le reste du
-// dashboard) plutot que le style propre de la maquette. L'ancienne liste
-// individuelle des 352 sites (OK/KO) a ete retiree.
+// Page d'accueil publique de la partie lambda : reproduction fidele de
+// la maquette "page user lambda.jpeg" (sidebar avec anneau de couverture
+// + 3 statistiques empilees, carte plein ecran avec legende flottante),
+// habillee avec l'identite visuelle de l'appli (memes classes .lambda-*,
+// memes couleurs navy/vert que le reste du dashboard). Page auto-portee
+// (n'utilise plus LambdaLayout) pour pouvoir piloter le bouton menu
+// mobile qui replie/deplie la colonne de statistiques.
 
 const COULEUR_PAR_STATUT = {
   CONNECTEE: "#0D9B5A",
@@ -19,7 +21,7 @@ const COULEUR_PAR_STATUT = {
   NON_CONNECTEE: "#C9CDD3",
 };
 const COULEUR_SITE = "#0A3D7A";
-const COULEUR_FIBRE = "#A2366F";
+const COULEUR_FIBRE = "#5B6478";
 
 function styleCommune(feature) {
   const couleur = COULEUR_PAR_STATUT[feature.properties.statut] ?? COULEUR_PAR_STATUT.NON_CONNECTEE;
@@ -69,8 +71,7 @@ function surChaqueLiaison(feature, layer) {
   if (nom) layer.bindPopup(`<strong>${nom}</strong>`);
 }
 
-const CENTRE_BURKINA_FASO = [12.2, -1.5];
-const RAYON_ANNEAU = 54;
+const RAYON_ANNEAU = 58;
 const PERIMETRE_ANNEAU = 2 * Math.PI * RAYON_ANNEAU;
 
 // Anime un nombre de 0 jusqu'a sa valeur cible des que les donnees sont
@@ -104,6 +105,16 @@ function LambdaListePage() {
   const [liaisonsGeojson, setLiaisonsGeojson] = useState(null);
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
+  const [sidebarOuverte, setSidebarOuverte] = useState(false);
+
+  const navigate = useNavigate();
+  const connecte = estConnecteDecideur();
+  const auth = getDecideurAuth();
+
+  function deconnecter() {
+    clearDecideurAuth();
+    navigate("/login");
+  }
 
   function charger() {
     setErreur(null);
@@ -134,109 +145,146 @@ function LambdaListePage() {
   const kmAnime = useCompteurAnime(stats ? stats.kmLiaisons : null);
   const arcAnneau = (pctAnime / 100) * PERIMETRE_ANNEAU;
 
+  // Cadre la carte sur l'emprise reelle des communes plutot qu'un
+  // center+zoom fixe, pour que le territoire remplisse tout l'espace
+  // disponible quel que soit le format de l'ecran (au lieu de flotter,
+  // petit, au milieu d'une carte trop dezoomee).
+  const emprise = geojson ? L.geoJSON(geojson).getBounds() : null;
+
   return (
-    <LambdaLayout>
-      <section className="lambda-hero-banner lambda-fade-up">
-        <div className="lambda-hero-ring-wrap">
-          <svg viewBox="0 0 140 140" width="128" height="128" className="lambda-hero-ring-svg">
-            <circle cx="70" cy="70" r={RAYON_ANNEAU} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="12" />
-            <circle
-              cx="70" cy="70" r={RAYON_ANNEAU} fill="none" stroke="#3DDC97" strokeWidth="12"
-              strokeDasharray={`${arcAnneau} ${PERIMETRE_ANNEAU}`} strokeLinecap="round"
-              transform="rotate(-90 70 70)"
-            />
-          </svg>
-          <div className="lambda-hero-ring-center">
-            <div className="lambda-hero-ring-value">{Math.round(pctAnime)}%</div>
-            <div className="lambda-hero-ring-label">couvert</div>
+    <div className="lambda-shell lambda-shell-plein">
+      <header className="lambda-header">
+        <div className="flag-bar"></div>
+        <div className="lambda-header-inner">
+          <button
+            className="lambda-menu-toggle"
+            onClick={() => setSidebarOuverte((v) => !v)}
+            aria-label="Ouvrir le panneau de statistiques"
+          >
+            <Menu size={20} />
+          </button>
+          <div className="lambda-brand">
+            <img src="/logo_anptic_ok.png" alt="ANPTIC" className="lambda-logo" />
+            <div className="lambda-brand-text">
+              <span className="lambda-brand-line1">GéoPortail</span>
+              <span className="lambda-brand-line2">RESINA</span>
+            </div>
           </div>
-        </div>
-        <div className="lambda-hero-banner-text">
-          <span className="lambda-hero-kicker">Réseau Informatique National de l'Administration</span>
-          <h1>La couverture nationale du RESINA, commune par commune</h1>
-          <p>
-            Ce portail présente l'état d'avancement du raccordement des communes, des sites administratifs
-            et des liaisons en fibre optique du RESINA sur l'ensemble du territoire.
-          </p>
-        </div>
-      </section>
 
-      <ErrorBanner message={erreur} onRetry={charger} />
-
-      <div className="lambda-map-card lambda-fade-up">
-        <div className="lambda-map-card-head">
-          <h2 className="lambda-map-card-title">Carte de couverture nationale</h2>
-          <span className="lambda-live-badge"><span className="live-dot"></span> Données en direct</span>
+          {connecte ? (
+            <div className="lambda-user">
+              <span className="lambda-user-name">{auth?.role}</span>
+              <button className="lambda-logout" onClick={deconnecter} title="Se déconnecter"><LogOut size={15} /></button>
+            </div>
+          ) : (
+            <button className="lambda-connexion-btn" onClick={() => navigate("/login")}>
+              <UserRound size={15} />
+              Connexion décideur
+              <ChevronDown size={14} />
+            </button>
+          )}
         </div>
-        {chargement && <p style={{ textAlign: "center", padding: "40px" }}>Chargement de la carte...</p>}
-        {!chargement && geojson && (
-          <MapContainer center={CENTRE_BURKINA_FASO} zoom={7} className="lambda-map">
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <GeoJSON data={geojson} style={styleCommune} onEachFeature={surChaqueCommune} />
-            {liaisonsGeojson && (
-              <GeoJSON data={liaisonsGeojson} style={styleLiaison} onEachFeature={surChaqueLiaison} />
-            )}
-            {sitesGeojson && (
-              <GeoJSON data={sitesGeojson} pointToLayer={pointVersMarqueurSite} onEachFeature={surChaqueSite} />
-            )}
-          </MapContainer>
+      </header>
+
+      <div className={`lambda-couverture-body ${sidebarOuverte ? "lambda-sidebar-ouverte" : ""}`}>
+        {sidebarOuverte && (
+          <div className="lambda-sidebar-fond" onClick={() => setSidebarOuverte(false)}></div>
         )}
-        <div className="lambda-map-legend">
-          <span className="lambda-map-legend-item">
-            <span className="lambda-map-legend-dot" style={{ background: COULEUR_PAR_STATUT.CONNECTEE }}></span>
-            Commune connectée
-          </span>
-          <span className="lambda-map-legend-item">
-            <span className="lambda-map-legend-dot" style={{ background: COULEUR_PAR_STATUT.PARTIELLE }}></span>
-            Traversée par une liaison
-          </span>
-          <span className="lambda-map-legend-item">
-            <span className="lambda-map-legend-dot" style={{ background: COULEUR_PAR_STATUT.NON_CONNECTEE }}></span>
-            Non desservie
-          </span>
-          <span className="lambda-map-legend-item">
-            <span className="lambda-map-legend-dot" style={{ background: COULEUR_SITE }}></span>
-            Site administratif connecté
-          </span>
-          <span className="lambda-map-legend-item">
-            <span className="lambda-map-legend-line" style={{ background: COULEUR_FIBRE }}></span>
-            Fibre optique
-          </span>
+        <aside className="lambda-sidebar">
+          <div className="lambda-ring-card">
+            <div className="lambda-ring-wrap">
+              <svg viewBox="0 0 140 140" width="150" height="150" className="lambda-ring-svg">
+                <circle cx="70" cy="70" r={RAYON_ANNEAU} fill="none" stroke="#E7ECF2" strokeWidth="13" />
+                <circle
+                  cx="70" cy="70" r={RAYON_ANNEAU} fill="none" stroke="#0D9B5A" strokeWidth="13"
+                  strokeDasharray={`${arcAnneau} ${PERIMETRE_ANNEAU}`} strokeLinecap="round"
+                  transform="rotate(-90 70 70)"
+                />
+              </svg>
+              <div className="lambda-ring-center">
+                <div className="lambda-ring-value">{Math.round(pctAnime)}%</div>
+              </div>
+            </div>
+            <div className="lambda-ring-label">Couverture nationale</div>
+          </div>
+
+          {stats && (
+            <div className="lambda-stats-dark">
+              <div className="lambda-stat-dark">
+                <span className="lambda-stat-dark-icon"><Building2 size={18} /></span>
+                <div className="lambda-stat-dark-texte">
+                  <div className="lambda-stat-dark-label">Communes connectées</div>
+                  <div className="lambda-stat-dark-valeur">{Math.round(communesAnime)} <span>communes</span></div>
+                  <div className="lambda-stat-dark-note">sur {stats.totalCommunes} communes</div>
+                </div>
+              </div>
+              <div className="lambda-stat-dark">
+                <span className="lambda-stat-dark-icon"><Landmark size={18} /></span>
+                <div className="lambda-stat-dark-texte">
+                  <div className="lambda-stat-dark-label">Sites administratifs raccordés</div>
+                  <div className="lambda-stat-dark-valeur">{Math.round(sitesAnime).toLocaleString("fr-FR")} <span>sites</span></div>
+                  <div className="lambda-stat-dark-note">Ministères, Préfectures, etc.</div>
+                </div>
+              </div>
+              <div className="lambda-stat-dark">
+                <span className="lambda-stat-dark-icon"><Cable size={18} /></span>
+                <div className="lambda-stat-dark-texte">
+                  <div className="lambda-stat-dark-label">Liaisons fibre optique</div>
+                  <div className="lambda-stat-dark-valeur">{Math.round(kmAnime).toLocaleString("fr-FR")} <span>km</span></div>
+                  <div className="lambda-stat-dark-note">Réseau national &amp; régional</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </aside>
+
+        <div className="lambda-map-full-wrap">
+          {erreur && <div className="lambda-map-erreur"><ErrorBanner message={erreur} onRetry={charger} /></div>}
+          {chargement && <p style={{ textAlign: "center", padding: "40px" }}>Chargement de la carte...</p>}
+          {!chargement && geojson && (
+            <MapContainer
+              bounds={emprise}
+              boundsOptions={{ padding: [8, 8] }}
+              zoomSnap={0.1}
+              zoomControl={false}
+              className="lambda-map-full"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <ZoomControl position="bottomright" />
+              <GeoJSON data={geojson} style={styleCommune} onEachFeature={surChaqueCommune} />
+              {liaisonsGeojson && (
+                <GeoJSON data={liaisonsGeojson} style={styleLiaison} onEachFeature={surChaqueLiaison} />
+              )}
+              {sitesGeojson && (
+                <GeoJSON data={sitesGeojson} pointToLayer={pointVersMarqueurSite} onEachFeature={surChaqueSite} />
+              )}
+            </MapContainer>
+          )}
+
+          <div className="lambda-map-legend-flottante">
+            <span className="lambda-legende-item">
+              <span className="lambda-legende-carre" style={{ background: COULEUR_PAR_STATUT.CONNECTEE }}></span>
+              Connectée
+            </span>
+            <span className="lambda-legende-item">
+              <span className="lambda-legende-carre" style={{ background: COULEUR_PAR_STATUT.PARTIELLE }}></span>
+              En cours
+            </span>
+            <span className="lambda-legende-item">
+              <span className="lambda-legende-ligne" style={{ background: COULEUR_FIBRE }}></span>
+              Fibre
+            </span>
+            <span className="lambda-legende-item">
+              <span className="lambda-legende-carre" style={{ background: COULEUR_PAR_STATUT.NON_CONNECTEE }}></span>
+              Non Desservie
+            </span>
+          </div>
         </div>
       </div>
-
-      {stats && (
-        <div className="lambda-stats">
-          <div className="lambda-stat-card lambda-stat-ok lambda-fade-up lambda-delay-1">
-            <span className="lambda-stat-icon"><LandPlot size={19} color="#0D9B5A" /></span>
-            <div>
-              <div className="lambda-stat-value">{Math.round(communesAnime)}</div>
-              <div className="lambda-stat-label">communes connectées au RESINA</div>
-              <div className="lambda-stat-note">sur {stats.totalCommunes} communes que compte le territoire national</div>
-            </div>
-          </div>
-          <div className="lambda-stat-card lambda-fade-up lambda-delay-2">
-            <span className="lambda-stat-icon"><Building2 size={19} color="#0A3D7A" /></span>
-            <div>
-              <div className="lambda-stat-value">{Math.round(sitesAnime).toLocaleString("fr-FR")}</div>
-              <div className="lambda-stat-label">sites administratifs raccordés</div>
-              <div className="lambda-stat-note">ministères, préfectures, mairies, services déconcentrés</div>
-            </div>
-          </div>
-          <div className="lambda-stat-card lambda-stat-warn lambda-fade-up lambda-delay-3">
-            <span className="lambda-stat-icon"><Cable size={19} color="#C97C0A" /></span>
-            <div>
-              <div className="lambda-stat-value">{Math.round(kmAnime).toLocaleString("fr-FR")} km</div>
-              <div className="lambda-stat-label">de liaisons en fibre optique</div>
-              <div className="lambda-stat-note">dorsale nationale et bretelles régionales</div>
-            </div>
-          </div>
-        </div>
-      )}
-    </LambdaLayout>
+    </div>
   );
 }
 
