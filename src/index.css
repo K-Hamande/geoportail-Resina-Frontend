@@ -3737,40 +3737,107 @@ body {
 
 .lambda-content { padding: 20px 24px; flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; }
 
-/* ---- Bandeau de synthese : anneau de sante + resume ---- */
-.lambda-hero-card {
-  background: white;
-  border-radius: 18px;
-  padding: 22px 26px;
+/* ---- Entrees animees (compteurs + apparition en fondu) ---- */
+@keyframes lambda-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.lambda-fade-up { animation: lambda-fade-up 550ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.lambda-delay-1 { animation-delay: 60ms; }
+.lambda-delay-2 { animation-delay: 140ms; }
+.lambda-delay-3 { animation-delay: 220ms; }
+@media (prefers-reduced-motion: reduce) {
+  .lambda-fade-up { animation: none; }
+}
+
+/* ---- Banniere hero (page de couverture nationale) : meme degrade que
+   le header, avec un anneau de progression anime montrant le
+   pourcentage de communes connectees - effet d'entree marquant plutot
+   qu'un simple bloc de texte. ---- */
+.lambda-hero-banner {
+  background: linear-gradient(135deg, #0B3868 0%, #0A3D7A 55%, #072B57 100%);
+  border-radius: 20px;
+  padding: 28px 30px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 24px;
-  box-shadow: 0 4px 20px rgba(10, 61, 122, 0.08);
-  border: 1px solid rgba(10, 61, 122, 0.05);
+  gap: 28px;
+  box-shadow: 0 10px 30px rgba(10, 61, 122, 0.25);
+  position: relative;
+  overflow: hidden;
 }
-
-.lambda-hero-ring { position: relative; flex-shrink: 0; }
-.lambda-hero-ring svg circle { transition: stroke-dasharray 0.6s ease; }
+.lambda-hero-banner::before {
+  content: "";
+  position: absolute; right: -70px; top: -90px;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+.lambda-hero-banner::after {
+  content: "";
+  position: absolute; left: -40px; bottom: -80px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: rgba(61, 220, 151, 0.08);
+  pointer-events: none;
+}
+.lambda-hero-ring-wrap { position: relative; flex-shrink: 0; z-index: 1; }
+.lambda-hero-ring-svg circle:last-child { transition: stroke-dasharray 0.3s ease; }
 .lambda-hero-ring-center {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.lambda-hero-ring-value { font-size: 26px; font-weight: 800; color: #10203D; line-height: 1; }
-.lambda-hero-ring-label { font-size: 10px; color: #5B6478; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 4px; }
-
-.lambda-hero-texts { min-width: 0; }
-.lambda-hero-title { font-size: 18px; font-weight: 800; color: #10203D; line-height: 1.3; }
-.lambda-hero-sub { font-size: 13px; color: #5B6478; margin-top: 4px; }
-.lambda-hero-live {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; font-weight: 700; color: #0D9B5A;
-  margin-top: 10px; background: #E3F6EC; padding: 5px 12px; border-radius: 999px;
+.lambda-hero-ring-value { font-size: 26px; font-weight: 800; color: white; line-height: 1; }
+.lambda-hero-ring-label { font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+.lambda-hero-banner-text { min-width: 0; z-index: 1; }
+.lambda-hero-kicker {
+  display: inline-block; font-size: 11px; font-weight: 700; color: #3DDC97;
+  text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;
+}
+.lambda-hero-banner-text h1 { font-size: 24px; font-weight: 800; color: white; line-height: 1.25; margin: 0 0 10px; }
+.lambda-hero-banner-text p { font-size: 13.5px; color: rgba(255,255,255,0.78); line-height: 1.6; margin: 0; max-width: 62ch; }
+@media (max-width: 640px) {
+  .lambda-hero-banner { flex-direction: column; text-align: center; padding: 24px 20px; }
+  .lambda-hero-banner-text p { max-width: none; }
 }
 
+/* ---- Carte de couverture (remplace la maquette statique par une vraie
+   carte Leaflet, habillee avec les memes cartes blanches en relief que
+   le reste de la page lambda) ---- */
+.lambda-map-card {
+  background: white; border-radius: 18px; padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 24px rgba(10, 61, 122, 0.1);
+  border: 1px solid rgba(10, 61, 122, 0.05);
+}
+.lambda-map-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; padding: 2px 6px 14px;
+}
+.lambda-map-card-title { font-size: 15px; font-weight: 800; color: #10203D; margin: 0; }
+.lambda-live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #E3F6EC; color: #0D9B5A; font-size: 11px; font-weight: 700;
+  padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+}
+.lambda-map {
+  height: 420px; width: 100%; border-radius: 12px; overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(10, 61, 122, 0.06);
+}
+.lambda-map-legend { display: flex; gap: 10px; flex-wrap: wrap; padding: 14px 6px 2px; }
+.lambda-map-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  background: #F5F7FA; border: 1px solid #E1E6EF; border-radius: 999px;
+  padding: 5px 12px; font-size: 11.5px; color: #5B6478; font-weight: 600;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.lambda-map-legend-item:hover {
+  transform: translateY(-1px); border-color: rgba(10, 61, 122, 0.2);
+  box-shadow: 0 3px 10px rgba(10, 61, 122, 0.08);
+}
+.lambda-map-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.lambda-map-legend-line { width: 14px; height: 3px; border-radius: 2px; flex-shrink: 0; }
 @media (max-width: 640px) {
-  .lambda-hero-card { flex-direction: column; text-align: center; padding: 20px; }
-  .lambda-hero-ring svg { width: 120px; height: 120px; }
+  .lambda-map { height: 300px; }
 }
 
 /* Stats */
@@ -3783,97 +3850,23 @@ body {
   border: 1px solid rgba(10, 61, 122, 0.05);
   box-shadow: 0 1px 4px rgba(10, 61, 122, 0.05);
   display: flex; align-items: center; gap: 12px;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 @media (min-width: 640px) {
-  .lambda-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(10, 61, 122, 0.1); }
+  .lambda-stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(10, 61, 122, 0.12); }
 }
 .lambda-stat-icon {
-  width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; font-size: 18px;
-  background: #F0F4FB;
+  background: #F0F4FB; box-shadow: 0 0 0 6px rgba(10, 61, 122, 0.04);
 }
-.lambda-stat-ok .lambda-stat-icon { background: #E3F6EC; }
-.lambda-stat-ko .lambda-stat-icon { background: #FCE8E8; }
-.lambda-stat-value { font-size: 24px; font-weight: 800; color: #10203D; line-height: 1; }
+.lambda-stat-ok .lambda-stat-icon { background: #E3F6EC; box-shadow: 0 0 0 6px rgba(13, 155, 90, 0.07); }
+.lambda-stat-ko .lambda-stat-icon { background: #FCE8E8; box-shadow: 0 0 0 6px rgba(217, 53, 53, 0.07); }
+.lambda-stat-warn .lambda-stat-icon { background: #FDF2E3; box-shadow: 0 0 0 6px rgba(201, 124, 10, 0.07); }
+.lambda-stat-value { font-size: 26px; font-weight: 800; color: #10203D; line-height: 1; }
 .lambda-stat-label { font-size: 11.5px; color: #5B6478; margin-top: 3px; }
+.lambda-stat-note { font-size: 10px; color: #8A94A0; margin-top: 2px; }
 
-/* Recherche */
-.lambda-search-bar {
-  display: flex; align-items: center; gap: 10px;
-  background: white; border-radius: 12px; padding: 12px 16px;
-  margin-bottom: 16px; border: 1px solid #E1E6EF;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.lambda-search-bar:focus-within { border-color: #0A3D7A; box-shadow: 0 0 0 3px rgba(10, 61, 122, 0.08); }
-.lambda-search-icon { font-size: 14px; opacity: 0.5; flex-shrink: 0; }
-.lambda-search-bar input {
-  flex: 1; border: none; outline: none; font-size: 14px; color: #10203D; background: none;
-  min-width: 0;
-}
-.lambda-search-count { font-size: 11px; color: #5B6478; font-weight: 700; white-space: nowrap; }
-
-/* Grille sites */
-.lambda-sites-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-@media (min-width: 720px) {
-  .lambda-sites-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 1100px) {
-  .lambda-sites-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
-.lambda-site-card {
-  /* min-width: 0 est essentiel ici : .lambda-site-card est un item de
-     .lambda-sites-grid (display:grid), et un item de grille a par defaut
-     min-width:auto - il refuse de retrecir sous la largeur de son
-     contenu. Comme .lambda-site-nom est en white-space:nowrap (necessaire
-     pour l'ellipsis), un nom de site long forcait toute la carte - donc
-     toute la grille, donc la page entiere - a deborder horizontalement,
-     poussant le badge OK/KO hors ecran (surtout visible sur mobile, ou
-     la marge est la plus etroite). */
-  min-width: 0;
-  background: white; border-radius: 12px; padding: 14px 16px;
-  display: flex; align-items: center; gap: 12px;
-  border: 1px solid rgba(10, 61, 122, 0.05);
-  border-left: 4px solid #E1E6EF;
-  box-shadow: 0 1px 4px rgba(10, 61, 122, 0.04);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-@media (min-width: 640px) {
-  .lambda-site-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(10, 61, 122, 0.1); }
-}
-.lambda-card-ok { border-left-color: #0D9B5A; }
-.lambda-card-ko { border-left-color: #D93535; }
-
-.lambda-site-statut {
-  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 800; color: white;
-}
-.lambda-site-statut-ok { background: linear-gradient(135deg, #22C55E, #0D9B5A); }
-.lambda-site-statut-ko { background: linear-gradient(135deg, #F87171, #D93535); }
-
-.lambda-site-info { flex: 1; min-width: 0; }
-.lambda-site-nom { font-size: 13px; font-weight: 700; color: #10203D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lambda-site-ville { font-size: 11px; color: #5B6478; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.lambda-site-badge {
-  padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; flex-shrink: 0;
-}
-.lambda-badge-ok { background: #E3F6EC; color: #0D9B5A; }
-.lambda-badge-ko { background: #FCE8E8; color: #D93535; }
-
-/* Pagination */
-.lambda-pagination {
-  display: flex; justify-content: center; align-items: center;
-  gap: 16px; padding: 20px; font-size: 13px; color: #5B6478;
-}
-.lambda-pagination button {
-  background: white; border: 1px solid #E1E6EF; padding: 8px 16px;
-  border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
-}
-.lambda-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-.lambda-pagination button:not(:disabled):hover { background: #F0F4FB; }
 
 /* ==================================================================
    PAGE ROLES (Backoffice) - documentation statique des roles admin

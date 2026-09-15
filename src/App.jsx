@@ -55,6 +55,10 @@ function DecideurRoutes() {
           <Route path="alertes" element={<AlertesPage />} />
         </Route>
       ) : (
+        // Vue publique "Geoportail national" (couverture RESINA par
+        // commune - carte + statistiques) : page d'accueil de la partie
+        // lambda, a la place de l'ancienne liste individuelle des 352
+        // sites (retiree, cf. LambdaListePage.jsx).
         <Route index element={<LambdaListePage />} />
       )}
 
