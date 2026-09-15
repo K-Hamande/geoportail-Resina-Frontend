@@ -174,7 +174,11 @@ function DecideurUsersPage() {
                       disabled={!!userEdite}
                     >
                       <option value="DECIDEUR">Décideur ministériel</option>
-                      <option value="LAMBDA">Utilisateur lambda</option>
+                      {/* "Utilisateur lambda" retire du choix a la creation : la vue
+                          publique ne necessite plus de compte (cf. App.jsx). Le role
+                          LAMBDA reste affiche/gerable ici uniquement pour les comptes
+                          crees avant ce changement (conserves pour compatibilite). */}
+                      {form.role === "LAMBDA" && <option value="LAMBDA">Utilisateur lambda (hérité)</option>}
                     </SearchableSelect>
                     {userEdite && (
                       <span className="field-hint">
