@@ -267,19 +267,23 @@ function LambdaListePage() {
           <div className="lambda-map-legend-flottante">
             <span className="lambda-legende-item">
               <span className="lambda-legende-carre" style={{ background: COULEUR_PAR_STATUT.CONNECTEE }}></span>
-              Connectée
+              Commune raccordée
             </span>
             <span className="lambda-legende-item">
               <span className="lambda-legende-carre" style={{ background: COULEUR_PAR_STATUT.PARTIELLE }}></span>
-              En cours
-            </span>
-            <span className="lambda-legende-item">
-              <span className="lambda-legende-ligne" style={{ background: COULEUR_FIBRE }}></span>
-              Fibre
+              Commune en cours de raccordement
             </span>
             <span className="lambda-legende-item">
               <span className="lambda-legende-carre" style={{ background: COULEUR_PAR_STATUT.NON_CONNECTEE }}></span>
-              Non Desservie
+              Commune non raccordée
+            </span>
+            <span className="lambda-legende-item">
+              <span className="lambda-legende-ligne" style={{ background: COULEUR_FIBRE }}></span>
+              Fibre optique
+            </span>
+            <span className="lambda-legende-item">
+              <span className="lambda-legende-carre" style={{ background: COULEUR_SITE, borderRadius: "50%" }}></span>
+              Site administratif raccordé
             </span>
           </div>
         </div>
