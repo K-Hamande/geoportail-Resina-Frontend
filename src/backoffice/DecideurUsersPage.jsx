@@ -124,12 +124,16 @@ function DecideurUsersPage() {
                     </span>
                   </td>
                   <td className="table-actions">
-                    <button className="btn-voir" onClick={() => ouvrirModification(user)}><Pencil size={12} /> Modifier</button>
-                    <button className="btn-voir" onClick={() => toggleActive(user)}>
-                      {user.actif ? <><Pause size={12} /> Désactiver</> : <><Play size={12} /> Activer</>}
+                    <button className="btn-voir btn-voir-icone" onClick={() => ouvrirModification(user)} title="Modifier" aria-label="Modifier">
+                      <Pencil size={14} />
                     </button>
-                    <button className="btn-voir" style={{ color: "var(--bo-ko, #D93535)" }} onClick={() => supprimer(user)}>
-                      <Trash2 size={12} /> Supprimer
+                    <button className="btn-voir btn-voir-icone" onClick={() => toggleActive(user)}
+                      title={user.actif ? "Désactiver" : "Activer"} aria-label={user.actif ? "Désactiver" : "Activer"}>
+                      {user.actif ? <Pause size={14} /> : <Play size={14} />}
+                    </button>
+                    <button className="btn-voir btn-voir-icone" style={{ color: "var(--bo-ko, #D93535)" }}
+                      onClick={() => supprimer(user)} title="Supprimer" aria-label="Supprimer">
+                      <Trash2 size={14} />
                     </button>
                   </td>
                 </tr>

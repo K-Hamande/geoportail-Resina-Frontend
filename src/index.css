@@ -1639,7 +1639,7 @@ body {
 /* ---- SIDEBAR ---- */
 .backoffice-shell .sidebar {
   width: 264px;
-  background: #0187CE;
+  background: #003478; 
   color: white;
 }
 
@@ -2342,6 +2342,8 @@ body {
   flex-shrink: 0;
 }
 
+.backoffice-shell .sidebar-brand-icon-img { width: 30px; height: 30px; object-fit: contain; }
+
 .backoffice-shell .sidebar-brand-texts { flex: 1; min-width: 0; }
 .backoffice-shell .sidebar-brand-title { font-family: var(--bo-font-display); font-size: 20px; font-weight: 700; letter-spacing: 1px; color: white; }
 .backoffice-shell .sidebar-brand-subtitle { font-size: 11px; color: #FFFFFF; margin: 2px 0 8px; }
@@ -2910,6 +2912,12 @@ body {
 .backoffice-shell .pill-ok { background: #E3F6EC; color: var(--bo-ok); }
 .backoffice-shell .pill-warn { background: #FDF1E0; color: var(--bo-warn); }
 .backoffice-shell .pill-ko { background: #FCE8E8; color: var(--bo-ko); }
+
+/* Variante icone seule (sans libelle) - ex. actions Modifier/Activer/
+   Supprimer de la page Comptes Decideurs. Specificite doublee (.btn-voir
+   + .btn-voir-icone) pour l'emporter sur les .btn-voir { padding... }
+   redefinis plus loin dans les media queries responsive. */
+.backoffice-shell .btn-voir.btn-voir-icone { padding: 6px 8px; gap: 0; }
 
 /* Bouton Voir dans le tableau */
 .backoffice-shell .btn-voir {
@@ -3878,7 +3886,7 @@ body {
 
 .lambda-stats-dark { display: flex; flex-direction: column; gap: 10px; }
 .lambda-stat-dark {
-  background: linear-gradient(135deg, #0187ce 0%, #0187ce 100%);
+  background: linear-gradient(135deg, #003478 0%, #003478 100%);
   border-radius: 14px;
   padding: 14px;
   display: flex;
