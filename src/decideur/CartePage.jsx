@@ -1,13 +1,14 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { buildColoredMarkerIcon } from "../shared/mapMarkers";
 import { getStatusLabel, getStatusIcon } from "../shared/statusStyles";
-import { ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSiteSelection } from "../shared/SiteSelectionContext";
 import DecideurLayout from "./DecideurLayout";
 
 const CENTRE_BURKINA_FASO = [12.2, -1.5];
 const ZOOM_SITE_SELECTIONNE = 14;
+const TAILLE_PAGE_LISTE = 10; // pagine la liste laterale au-dela de ce nombre de sites
 
 function badgeClassFor(statut) {
   if (statut === "KO") return "badge-ko";
@@ -22,12 +23,20 @@ function CartePage() {
   // besoin de son propre fetch + intervalle de /api/v1/sites/map.
   const { mapSites: sites, definirSiteSansNaviguer } = useSiteSelection();
   const [recherche, setRecherche] = useState("");
+  const [page, setPage] = useState(1);
   const mapRef = useRef(null);
+
+  // Retour a la page 1 des qu'une recherche change le resultat - sinon on
+  // peut se retrouver sur une page vide si le texte tape ne laisse que
+  // peu de resultats.
+  useEffect(() => {
+    setPage(1);
+  }, [recherche]);
 
   // Choisir un site ici (marqueur ou liste laterale) filtre/centre la
   // carte elle-meme au lieu de rediriger vers "Mon site" (contrairement
   // au selecteur du header) : on met a jour le site selectionne partage
-  // et on fait voler la carte vers ses coordonnees.
+  // et on zoome sur ses coordonnees.
   function voirSite(site) {
     definirSiteSansNaviguer(site.siteId);
     mapRef.current?.flyTo([site.latitude, site.longitude], ZOOM_SITE_SELECTIONNE);
@@ -55,6 +64,11 @@ function CartePage() {
         site.nom.toLowerCase().includes(texte) || site.ville.toLowerCase().includes(texte)
     );
   }, [sitesAvecCoordonnees, recherche]);
+
+  const totalPages = Math.max(1, Math.ceil(sitesFiltres.length / TAILLE_PAGE_LISTE));
+  const pageActuelle = Math.min(page, totalPages);
+  const debut = (pageActuelle - 1) * TAILLE_PAGE_LISTE;
+  const sitesPage = sitesFiltres.slice(debut, debut + TAILLE_PAGE_LISTE);
 
   return (
     <DecideurLayout plainePage>
@@ -107,7 +121,7 @@ function CartePage() {
           </div>
 
           <div className="map-sidebar-list">
-            {sitesFiltres.map((site) => {
+            {sitesPage.map((site) => {
               const StatutIcone = getStatusIcon(site.statutGlobal);
               return (
                 <button
@@ -127,6 +141,30 @@ function CartePage() {
               );
             })}
           </div>
+
+          {totalPages > 1 && (
+            <div className="map-sidebar-pagination">
+              <button
+                type="button"
+                className="map-sidebar-page-btn"
+                onClick={() => setPage(pageActuelle - 1)}
+                disabled={pageActuelle === 1}
+                aria-label="Page précédente"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span>Page {pageActuelle} / {totalPages}</span>
+              <button
+                type="button"
+                className="map-sidebar-page-btn"
+                onClick={() => setPage(pageActuelle + 1)}
+                disabled={pageActuelle === totalPages}
+                aria-label="Page suivante"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </DecideurLayout>

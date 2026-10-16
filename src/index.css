@@ -48,8 +48,15 @@ body {
    largeur de l'ecran. */
 .page-pleine { max-width: none; box-shadow: none; }
 .page-pleine .page-content { padding: 0; display: flex; flex-direction: column; }
-.page-pleine .map-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.page-pleine .map-container { flex: 1; height: auto; min-height: 320px; border-radius: 0; margin-bottom: 0; }
+/* flex: 1 (pas de display: flex ici) : .map-layout doit grandir pour
+   remplir .page-content SANS perdre son display: grid desktop (regle
+   plus bas, >=1024px) - BUG CORRIGE : la premiere version imposait
+   display: flex ici, qui (meme specificite, declaration plus proche)
+   ecrasait ce display: grid a toutes les largeurs, et un min-height: 0
+   associe faisait s'effondrer la carte a hauteur 0 - plus aucune carte
+   visible. */
+.page-pleine .map-layout { flex: 1; min-height: 320px; }
+.page-pleine .map-container { height: 100%; border-radius: 0; margin-bottom: 0; }
 
 /* ---- EN-TETE ---- */
 .app-header {
@@ -1358,9 +1365,10 @@ body {
 
   /* En mode plein ecran, la carte et la liste laterale doivent remplir
      toute la hauteur disponible (pas seulement 70vh) - voir .page-pleine
-     ci-dessus. */
+     ci-dessus. align-items: stretch (au lieu de start, defaut ci-dessus)
+     fait grandir .map-container/.map-sidebar (elements de grille) sur
+     toute la hauteur de .map-layout. */
   .page-pleine .map-layout { align-items: stretch; gap: 0; }
-  .page-pleine .map-container { min-height: 0; }
   .page-pleine .map-sidebar { max-height: none; border-radius: 0; box-shadow: none; }
 
   .map-sidebar-count {
@@ -1400,6 +1408,35 @@ body {
 
   .map-site-item-name { font-size: 12px; font-weight: 600; }
   .map-site-item-ville { font-size: 11px; color: var(--color-text-muted); }
+
+  .map-sidebar-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #EEF0F3;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  .map-sidebar-page-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid #E3E6EB;
+    border-radius: 6px;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .map-sidebar-page-btn:hover:not(:disabled) { background: #F5F6F8; }
+  .map-sidebar-page-btn:disabled { opacity: 0.4; cursor: default; }
 }
 
 .map-popup-link {
