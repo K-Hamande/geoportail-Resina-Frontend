@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, TriangleAlert, XCircle } from "lucide-react";
 import { apiGet } from "../shared/apiClient";
 import { useSiteSelection } from "../shared/SiteSelectionContext";
@@ -38,11 +38,17 @@ function MonSitePage() {
   const [erreur, setErreur] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
+  // Retient le dernier siteId charge avec succes (pas un simple booleen :
+  // changer de site via le selecteur doit redevenir un "premier chargement"
+  // pour CE site). Sert a eviter qu'un rafraichissement periodique en
+  // echec passager (ex: 429 "trop de requetes") n'efface les donnees deja
+  // affichees avec un ecran d'erreur - seul un echec AVANT tout succes
+  // pour ce site doit afficher l'erreur.
+  const dernierSiteChargeAvecSucces = useRef(null);
 
   const chargerStatuts = useCallback(async () => {
     if (!siteId) return;
     setIsLoading(true);
-    setErreur(null);
     try {
       const [anptic, lan] = await Promise.all([
         apiGet(`/api/v1/site/${siteId}/anptic`),
@@ -51,8 +57,10 @@ function MonSitePage() {
       setAnpticData(anptic);
       setLanData(lan);
       setLastUpdated(new Date());
+      setErreur(null);
+      dernierSiteChargeAvecSucces.current = siteId;
     } catch (err) {
-      setErreur(err.message);
+      if (dernierSiteChargeAvecSucces.current !== siteId) setErreur(err.message);
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, TriangleAlert, CheckCircle2, XCircle } from "lucide-react";
 import { apiGet, apiPost } from "../shared/apiClient";
 import { formaterTempsRelatif } from "../shared/timeFormat";
@@ -46,9 +46,26 @@ function AlertesPage() {
   const [pushEnCours, setPushEnCours] = useState(false);
   const [pushErreur, setPushErreur] = useState(null);
   const [nonLuesUniquement, setNonLuesUniquement] = useState(false);
+  // useRef (pas useState) : doit rester a jour dans la closure de
+  // l'intervalle de rafraichissement (deps [] sur le useEffect ci-dessous)
+  // sans avoir a recreer cet intervalle a chaque changement.
+  const aChargeAvecSucces = useRef(false);
 
   function charger() {
-    apiGet("/api/v1/incidents").then(setIncidents).catch((err) => setErreur(err.message));
+    apiGet("/api/v1/incidents")
+      .then((data) => {
+        setIncidents(data);
+        setErreur(null);
+        aChargeAvecSucces.current = true;
+      })
+      .catch((err) => {
+        // Un rafraichissement en arriere-plan (toutes les 30s) qui echoue
+        // passagerement (ex: 429 "trop de requetes") ne doit pas remplacer
+        // une liste deja chargee avec succes par un ecran d'erreur - le
+        // prochain cycle reessaiera tout seul. On n'affiche l'erreur que
+        // si on n'a encore jamais reussi a charger la liste.
+        if (!aChargeAvecSucces.current) setErreur(err.message);
+      });
   }
 
   useEffect(() => {
