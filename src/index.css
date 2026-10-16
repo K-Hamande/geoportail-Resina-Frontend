@@ -39,6 +39,18 @@ body {
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.08);
 }
 
+/* Variante "plein ecran" (Carte) : .page plafonnait toujours la largeur
+   (480px puis 720/1140px selon le breakpoint) et .page-content ajoutait
+   du padding - la carte Leaflet ne pouvait donc jamais remplir toute la
+   largeur/hauteur visible, meme avec .map-container en 70vh. Ici on
+   retire ce plafond et on laisse .map-layout/.map-container grandir
+   (flex: 1) dans tout l'espace restant sous le header, sur toute la
+   largeur de l'ecran. */
+.page-pleine { max-width: none; box-shadow: none; }
+.page-pleine .page-content { padding: 0; display: flex; flex-direction: column; }
+.page-pleine .map-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.page-pleine .map-container { flex: 1; height: auto; min-height: 320px; border-radius: 0; margin-bottom: 0; }
+
 /* ---- EN-TETE ---- */
 .app-header {
   background: linear-gradient(135deg, #0B3868 0%, #163F73 55%, #0E2E5C 100%);
@@ -1343,6 +1355,13 @@ body {
     padding: 16px;
     max-height: 70vh;
   }
+
+  /* En mode plein ecran, la carte et la liste laterale doivent remplir
+     toute la hauteur disponible (pas seulement 70vh) - voir .page-pleine
+     ci-dessus. */
+  .page-pleine .map-layout { align-items: stretch; gap: 0; }
+  .page-pleine .map-container { min-height: 0; }
+  .page-pleine .map-sidebar { max-height: none; border-radius: 0; box-shadow: none; }
 
   .map-sidebar-count {
     font-size: 11px;

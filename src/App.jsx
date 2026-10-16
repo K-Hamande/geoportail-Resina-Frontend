@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "./shared/AuthContext";
 import { SiteSelectionProvider } from "./shared/SiteSelectionContext";
-import { estConnecteDecideur, getDecideurAuth } from "./shared/decideurAuth";
+import { estConnecteDecideur, getDecideurAuth, DECIDEUR_AUTH_CHANGE_EVENT } from "./shared/decideurAuth";
 import DecideurLoginPage from "./decideur/DecideurLoginPage";
 import MonSitePage from "./decideur/MonSitePage";
 import CartePage from "./decideur/CartePage";
@@ -34,14 +35,54 @@ import IncidentsHistoriquePage from "./backoffice/IncidentsHistoriquePage";
 // de comptes, conserve pour compatibilite mais plus utilise pour de
 // nouveaux acces) est traite comme "non decideur" et voit la meme vue
 // publique - un seul chemin a maintenir.
-function DecideurRoutes() {
+function calculerAuthentificationDecideur() {
   const auth = getDecideurAuth();
-  const estDecideurAuthentifie = estConnecteDecideur() && auth?.role === "DECIDEUR";
+  return estConnecteDecideur() && auth?.role === "DECIDEUR";
+}
+
+function DecideurRoutes() {
+  // BUG CORRIGE : ce booleen etait calcule une seule fois par de simples
+  // appels de fonction (pas un useState), au moment ou DecideurRoutes
+  // etait rendu pour la premiere fois. Une deconnexion (navigate SPA,
+  // sans rechargement complet) ne faisait alors pas forcement reexecuter
+  // ce corps de fonction : l'arbre de routes "authentifie" restait figé,
+  // pret a reafficher une session fantome. On ecoute maintenant
+  // DECIDEUR_AUTH_CHANGE_EVENT (declenche par saveDecideurAuth/
+  // clearDecideurAuth, y compris dans le meme onglet) pour recalculer
+  // reellement ce booleen via un vrai setState a chaque connexion/
+  // deconnexion.
+  const [estDecideurAuthentifie, setEstDecideurAuthentifie] = useState(
+    calculerAuthentificationDecideur
+  );
+
+  useEffect(() => {
+    function recalculer() {
+      setEstDecideurAuthentifie(calculerAuthentificationDecideur());
+    }
+    window.addEventListener(DECIDEUR_AUTH_CHANGE_EVENT, recalculer);
+    // "storage" : couvre le cas d'une deconnexion/connexion faite dans un
+    // AUTRE onglet du meme navigateur (l'evenement custom ci-dessus ne se
+    // declenche que dans l'onglet d'origine).
+    window.addEventListener("storage", recalculer);
+    return () => {
+      window.removeEventListener(DECIDEUR_AUTH_CHANGE_EVENT, recalculer);
+      window.removeEventListener("storage", recalculer);
+    };
+  }, []);
 
   return (
     <Routes>
       {/* Page de connexion, pour les decideurs qui ont un compte */}
       <Route path="/login" element={<DecideurLoginPage />} />
+
+      {/* Vue publique accessible EN PERMANENCE, meme pour un decideur
+          deja connecte (LambdaListePage gere deja ce cas : elle affiche
+          alors son role + un bouton de deconnexion plutot qu'un bouton
+          "Se connecter"). BUG CORRIGE : avant cette route, un decideur
+          connecte n'avait plus aucun moyen d'atteindre cette page - seul
+          "/" (qui affiche sa propre page "Mon site") y menait quand il
+          n'etait PAS connecte. */}
+      <Route path="/public" element={<LambdaListePage />} />
 
       {estDecideurAuthentifie ? (
         // SiteSelectionProvider en layout partage : une SEULE instance pour

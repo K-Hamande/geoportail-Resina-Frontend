@@ -1,10 +1,21 @@
 const STORAGE_KEY = "resina-decideur-auth";
 
+// Nom de l'evenement declenche a chaque connexion/deconnexion, pour que
+// App.jsx (DecideurRoutes) puisse reagir immediatement et re-evaluer
+// quelle partie de l'arbre de routes afficher. Sans cet evenement, la
+// deconnexion (navigate("/login") en SPA, sans rechargement complet) ne
+// provoquait aucun nouveau rendu de DecideurRoutes : l'arbre de routes
+// "decideur authentifie" restait affiche en arriere-plan, pret a
+// reafficher une session fantome au moindre retour en arriere ou lien
+// direct vers "/", "/carte" ou "/alertes".
+export const DECIDEUR_AUTH_CHANGE_EVENT = "resina-decideur-auth-change";
+
 // Stocke le token JWT et le profil apres connexion reussie.
 // localStorage : persiste apres fermeture du navigateur (pratique
 // pour les decideurs qui ouvrent l'appli tous les matins).
 export function saveDecideurAuth(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  window.dispatchEvent(new Event(DECIDEUR_AUTH_CHANGE_EVENT));
 }
 
 export function getDecideurAuth() {
@@ -18,6 +29,7 @@ export function getDecideurAuth() {
 
 export function clearDecideurAuth() {
   localStorage.removeItem(STORAGE_KEY);
+  window.dispatchEvent(new Event(DECIDEUR_AUTH_CHANGE_EVENT));
 }
 
 export function getDecideurToken() {

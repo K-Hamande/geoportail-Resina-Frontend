@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import { Link } from "react-router-dom";
+import { LogOut, Globe } from "lucide-react";
 
 function Header({ nav, children, onLogout, nomComplet, role }) {
   return (
@@ -22,6 +23,7 @@ function Header({ nav, children, onLogout, nomComplet, role }) {
           <div className="header-user">
             <span className="header-user-name">{nomComplet}</span>
             <span className="header-user-role">{role === "LAMBDA" ? "Observateur" : "Décideur"}</span>
+            <Link to="/public" className="header-logout-btn" title="Voir la vue publique"><Globe size={15} /></Link>
             <button className="header-logout-btn" onClick={onLogout} title="Se déconnecter"><LogOut size={15} /></button>
           </div>
         )}

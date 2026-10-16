@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { apiGet } from "../shared/apiClient";
 import { buildColoredMarkerIcon } from "../shared/mapMarkers";
 import { getStatusLabel, getStatusIcon } from "../shared/statusStyles";
 import { ChevronRight } from "lucide-react";
 import { useSiteSelection } from "../shared/SiteSelectionContext";
-import ErrorBanner from "../shared/ErrorBanner";
 import DecideurLayout from "./DecideurLayout";
 
 const CENTRE_BURKINA_FASO = [12.2, -1.5];
-const INTERVALLE_ACTUALISATION_MS = 60000; // 60 s - payload plus lourd que "Mon site"
+const ZOOM_SITE_SELECTIONNE = 14;
 
 function badgeClassFor(statut) {
   if (statut === "KO") return "badge-ko";
@@ -19,20 +17,30 @@ function badgeClassFor(statut) {
 }
 
 function CartePage() {
-  const { choisirSite } = useSiteSelection();
-  const [sites, setSites] = useState([]);
-  const [erreur, setErreur] = useState(null);
+  // mapSites vient du SiteSelectionProvider (partage avec DecideurLayout,
+  // une seule requete/minute pour toute la session) : cette page n'a plus
+  // besoin de son propre fetch + intervalle de /api/v1/sites/map.
+  const { mapSites: sites, definirSiteSansNaviguer } = useSiteSelection();
   const [recherche, setRecherche] = useState("");
+  const mapRef = useRef(null);
 
-  function charger() {
-    apiGet("/api/v1/sites/map").then(setSites).catch((err) => setErreur(err.message));
+  // Choisir un site ici (marqueur ou liste laterale) filtre/centre la
+  // carte elle-meme au lieu de rediriger vers "Mon site" (contrairement
+  // au selecteur du header) : on met a jour le site selectionne partage
+  // et on fait voler la carte vers ses coordonnees.
+  function voirSite(site) {
+    definirSiteSansNaviguer(site.siteId);
+    mapRef.current?.flyTo([site.latitude, site.longitude], ZOOM_SITE_SELECTIONNE);
   }
 
-  useEffect(() => {
-    charger();
-    const intervalle = setInterval(charger, INTERVALLE_ACTUALISATION_MS);
-    return () => clearInterval(intervalle);
-  }, []);
+  // Remplace le lien "Leaflet" par defaut du controle d'attribution par
+  // la marque ANPTIC, en conservant le texte de copyright OpenStreetMap
+  // (obligatoire du point de vue licence) deja passe via TileLayer.
+  function handleMapRef(map) {
+    if (!map || mapRef.current === map) return;
+    mapRef.current = map;
+    map.attributionControl.setPrefix("ANPTIC");
+  }
 
   const sitesAvecCoordonnees = useMemo(
     () => sites.filter((site) => site.latitude != null && site.longitude != null),
@@ -49,14 +57,12 @@ function CartePage() {
   }, [sitesAvecCoordonnees, recherche]);
 
   return (
-    <DecideurLayout>
-      <ErrorBanner message={erreur} onRetry={charger} />
-
+    <DecideurLayout plainePage>
       {/* Sur mobile/tablette : uniquement la carte, pleine largeur (comportement
           d'origine inchangé). A partir de 1024px, .map-layout devient un
           2-colonnes carte + liste (voir index.css). */}
       <div className="map-layout">
-        <MapContainer center={CENTRE_BURKINA_FASO} zoom={7} className="map-container">
+        <MapContainer ref={handleMapRef} center={CENTRE_BURKINA_FASO} zoom={7} className="map-container">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -76,7 +82,7 @@ function CartePage() {
                   <br />
                   Statut : <StatutIcone size={12} strokeWidth={3} style={{ verticalAlign: "-1px" }} /> {getStatusLabel(site.statutGlobal)}
                   <br />
-                  <button type="button" className="map-popup-link" onClick={() => choisirSite(site.siteId)}>
+                  <button type="button" className="map-popup-link" onClick={() => voirSite(site)}>
                     Voir ce site <ChevronRight size={13} />
                   </button>
                 </Popup>
@@ -107,7 +113,7 @@ function CartePage() {
                 <button
                   type="button"
                   key={site.siteId}
-                  onClick={() => choisirSite(site.siteId)}
+                  onClick={() => voirSite(site)}
                   className="map-site-item"
                 >
                   <div>
