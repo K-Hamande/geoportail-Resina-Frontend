@@ -64,26 +64,19 @@ body {
   color: white;
 }
 
-/* Le decor (cercle) est scope a .header-top (pas .app-header) : le menu
-   deroulant du selecteur de site (.site-select-panel, plus bas dans le
-   header) est en position absolute et doit deborder largement sous
-   l'en-tete - un overflow:hidden sur .app-header le rognerait. */
 .header-top {
   position: relative;
   overflow: hidden;
 }
 
-.header-top::before {
-  content: "";
-  position: absolute;
-  right: -60px;
-  top: -70px;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  pointer-events: none;
-}
+/* BUG CORRIGE : un cercle decoratif etait positionne ici (::before,
+   220px, 5% d'opacite) en supposant .header-top assez large pour qu'il
+   reste dans un coin sans toucher le contenu - mais a partir de 1024px,
+   .header-top est "flex: 0 0 auto" (ne grandit plus, se cale sur son
+   contenu), donc le cercle se retrouvait colle juste derriere le titre
+   et le badge "EN DIRECT". Retire plutot que repositionne : purement
+   cosmetique, a peine visible (5% d'opacite), ne valait pas la
+   complexite de le caler correctement a toutes les largeurs. */
 
 .flag-bar {
   height: 4px;
@@ -93,7 +86,7 @@ body {
 .header-top {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 14px 16px 8px;
 }
 
@@ -1197,7 +1190,12 @@ body {
 
 @media (min-width: 1024px) {
   .page {
-    max-width: 1140px;
+    /* BUG CORRIGE : un plafond de 1140px (puis 1360px, 1700px dans des
+       versions precedentes) laissait de grandes bandes blanches inutiles
+       sur un ecran desktop courant - plus de plafond du tout a partir
+       de cette largeur, .page-content garde son propre padding pour
+       l'aeration du contenu. */
+    max-width: none;
     box-shadow: none;   /* l'ombre "carte flottante" a du sens en colonne etroite, plus a cette largeur */
   }
 
@@ -1325,6 +1323,84 @@ body {
 
 /* ---- CARTE : liste laterale, masquee par defaut (mobile/tablette) ---- */
 .map-sidebar { display: none; }
+
+/* ---- ALERTES : bascule entre "Alertes reseau" (NetXMS) et
+   "Incidents" (tickets iTop) - jamais les 2 en meme temps. ---- */
+.alertes-onglets {
+  display: flex;
+  gap: 6px;
+  background: var(--color-bg);
+  border: 1px solid #E3E6EB;
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 14px;
+}
+
+.alertes-onglet-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.alertes-onglet-btn:hover { color: var(--color-text); }
+
+.alertes-onglet-actif {
+  background: white;
+  color: var(--color-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.alertes-onglet-badge {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.alertes-onglet-actif .alertes-onglet-badge {
+  background: var(--color-primary);
+  color: white;
+}
+
+.alertes-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 16px 0 8px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.alertes-pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #E3E6EB;
+  background: white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.alertes-pagination-btn:hover:not(:disabled) { background: #F5F6F8; }
+.alertes-pagination-btn:disabled { opacity: 0.4; cursor: default; }
 
 /* ---- ALERTES : grille, 1 colonne par defaut (mobile/tablette) ---- */
 .alerts-grid {
@@ -1549,16 +1625,20 @@ body {
   padding: 0;
 }
 
+/* BUG CORRIGE : etait en position: absolute (relatif au header, lui-meme
+   position: sticky a partir de 1024px) - une fois le header "colle" en
+   haut apres defilement, le contenu qui depassait de sa hauteur normale
+   se faisait couper. Rendu desormais via un portail dans document.body
+   (cf. SiteSelector.jsx), en position: fixed avec ses coordonnees
+   calculees en JS - top/left/width sont fixes en style inline a chaque
+   ouverture, les valeurs ci-dessous ne sont qu'un filet de secours. */
 .site-select-panel {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: -40px;
+  position: fixed;
   background: white;
   border-radius: 10px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
   padding: 10px;
-  z-index: 50;
+  z-index: 1000;
   color: var(--color-text);
 }
 
@@ -1616,7 +1696,9 @@ body {
 .site-select-item-ville { font-size: 11px; color: var(--color-text-muted); }
 
 @media (min-width: 1024px) {
-  .site-select-panel { right: 0; max-width: 420px; }
+  /* top/left/width viennent desormais de JS (cf. SiteSelector.jsx) -
+     seul un plafond de largeur reste utile ici. */
+  .site-select-panel { max-width: 420px; }
 }
 
 /* ==================================================================
@@ -2170,7 +2252,11 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .page { max-width: 1240px; }
+  /* BUG CORRIGE : un 2e bloc @media(min-width:1024px) ailleurs dans ce
+     fichier (voir plus haut) fixe deja .page a max-width: none - celui-ci
+     le replafonnait a 1240px (meme specificite, declare plus bas =
+     l'emporte), annulant le correctif plein ecran. */
+  .page { max-width: none; }
   .page-content { padding: 32px 40px; }
 
   /* Cartes plus respirees, coins plus doux, legere ombre pour donner
@@ -2225,9 +2311,9 @@ body {
   .map-site-item, .site-select-item { transition: background 0.15s; }
 }
 
-@media (min-width: 1440px) {
-  .page { max-width: 1360px; }
-}
+/* .page n'a plus de plafond de largeur a partir de 1024px (regles
+   ci-dessus) - rien a refaire ici pour 1440px+, .page-content garde son
+   propre padding pour l'aeration du contenu quelle que soit la largeur. */
 
 /* ==================================================================
    HEADER DECIDEUR : barre compacte unifiee a partir de 1024px
@@ -2238,8 +2324,24 @@ body {
   .header-main-row {
     display: flex;
     align-items: center;
-    gap: 28px;
-    padding: 14px 32px;
+    /* BUG CORRIGE (tentative precedente) : flex-wrap faisait passer les
+       elements en trop sur une 2e ligne, mais les decorations en
+       position absolute de ce header (cercle de .header-top::before,
+       panneau deroulant .site-select-panel) ne sont pas prevues pour un
+       header sur 2 lignes et se chevauchaient avec cette 2e ligne. On
+       reduit plutot l'empreinte du contenu (gap resserre + site
+       selectionne qui peut retrecir) pour que tout tienne sur UNE ligne
+       le plus largement possible, et on degrade en dernier recours vers
+       un defilement horizontal du bandeau (jamais de contenu invisible)
+       plutot que vers un retour a la ligne.
+       clamp() ci-dessous : 14px minimum, 28px au-dela de 1440px, et
+       interpole lineairement entre les deux - plus de place rendue aux
+       elements du bandeau entre 1024 et 1440px, la largeur la plus
+       susceptible de manquer d'espace. */
+    gap: clamp(14px, 2vw, 28px);
+    padding: 14px clamp(16px, 2vw, 32px);
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 
   .header-top {
@@ -2259,11 +2361,18 @@ body {
   /* La navigation (deja re-stylee pour se fondre dans le bandeau, voir
      regles .nav-desktop-slot existantes) reste centree entre le logo
      et le selecteur de site. */
-.nav-desktop-slot { flex: 1; display: flex; justify-content: center; }
+.nav-desktop-slot { flex: 1; min-width: 0; display: flex; justify-content: center; }
   .nav-desktop-slot .bottom-nav { justify-content: center; }
 
   .selector-box {
     margin: 0;
+    /* BUG CORRIGE : un flex-shrink active ici (tentative precedente,
+       flex: 0 1 300px) deplaçait la boite selon la pression du bandeau,
+       ce qui decalait le panneau deroulant (positionne en absolute par
+       rapport a cette boite) et le faisait chevaucher la navigation.
+       Retour a 0 0 auto (largeur stable, basee sur le contenu) - la
+       prevention du debordement se fait uniquement via le gap resserre
+       et le defilement horizontal de secours sur .header-main-row. */
     flex: 0 0 auto;
     width: auto;
     min-width: 300px;
@@ -2275,12 +2384,8 @@ body {
   .selector-label { font-size: 9px; }
   .site-select-trigger { font-size: 14px; }
 
-  .site-select-panel {
-    top: calc(100% + 10px);
-    right: 0;
-    left: auto;
-    width: 380px;
-  }
+  /* top/left/width viennent de JS (cf. SiteSelector.jsx) - rien a
+     surcharger ici. */
 }
 
 @media (min-width: 1440px) {
@@ -3815,7 +3920,27 @@ body {
   margin-top: 20px;
 }
 
-/* User connecte dans le header decideur */
+/* Lien "Vue publique", separe de la pastille .header-user (pas entasse
+   avec le nom/role/deconnexion - cf. BUG CORRIGE plus bas). */
+.header-public-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+.header-public-link:hover { background: rgba(255, 255, 255, 0.18); color: white; }
+
+/* User connecte dans le header decideur. BUG CORRIGE : le lien "Vue
+   publique" etait entasse ici avec le nom/role/bouton de deconnexion
+   (4 elements dans une pastille prevue pour 2), ce qui coinçait le
+   bouton de deconnexion tout a droite - il est maintenant sorti dans
+   .header-public-link ci-dessus, separe. */
 .header-user {
   display: flex;
   align-items: center;

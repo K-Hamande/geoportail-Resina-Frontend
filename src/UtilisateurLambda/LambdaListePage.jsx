@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, GeoJSON, ZoomControl } from "react-leaflet";
 import L from "leaflet";
@@ -106,6 +106,7 @@ function LambdaListePage() {
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [sidebarOuverte, setSidebarOuverte] = useState(false);
+  const mapRef = useRef(null);
 
   const navigate = useNavigate();
   const connecte = estConnecteDecideur();
@@ -150,6 +151,27 @@ function LambdaListePage() {
   // disponible quel que soit le format de l'ecran (au lieu de flotter,
   // petit, au milieu d'une carte trop dezoomee).
   const emprise = geojson ? L.geoJSON(geojson).getBounds() : null;
+
+  // react-leaflet n'applique "bounds" qu'UNE SEULE FOIS, au tout premier
+  // montage interne de la carte - si le conteneur n'a pas encore sa
+  // taille finale a cet instant precis (mise en page flex avec le
+  // panneau lateral, polices pas encore chargees, etc.), le cadrage
+  // initial se fait sur une taille perimee et le Burkina peut apparaitre
+  // decentre. On refait explicitement le cadrage une fois le conteneur
+  // stabilise (requestAnimationFrame, apres le premier paint). Depend
+  // volontairement de geojson (pas emprise, recalcule - nouvelle
+  // reference - a chaque rendu) : ne doit se redeclencher que quand les
+  // donnees changent, pas a chaque re-rendu (ex: animation des compteurs).
+  useEffect(() => {
+    if (!mapRef.current || !emprise) return;
+    const map = mapRef.current;
+    const id = requestAnimationFrame(() => {
+      map.invalidateSize();
+      map.fitBounds(emprise, { padding: [8, 8] });
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geojson]);
 
   return (
     <div className="lambda-shell lambda-shell-plein">
@@ -243,6 +265,7 @@ function LambdaListePage() {
           {chargement && <p style={{ textAlign: "center", padding: "40px" }}>Chargement de la carte...</p>}
           {!chargement && geojson && (
             <MapContainer
+              ref={mapRef}
               bounds={emprise}
               boundsOptions={{ padding: [8, 8] }}
               zoomSnap={0.1}
