@@ -2503,8 +2503,18 @@ body {
 
   /* La navigation (deja re-stylee pour se fondre dans le bandeau, voir
      regles .nav-desktop-slot existantes) reste centree entre le logo
-     et le selecteur de site. */
-.nav-desktop-slot { flex: 1; min-width: 0; display: flex; justify-content: center; }
+     et le selecteur de site.
+     BUG CORRIGE : "min-width: 0" permettait a cette boite de retrecir
+     EN DESSOUS de la largeur naturelle des liens ("Mon site"/"Carte"/
+     "Alertes") - ceux-ci ne retrecissant pas eux-memes (flex: none),
+     ils debordaient alors symetriquement des deux cotes de la boite
+     centree, et le lien "Mon site" se retrouvait a chevaucher le badge
+     "EN DIRECT" juste a sa gauche. Sans min-width: 0 (valeur par defaut
+     "auto"), la boite ne descend plus sous la taille de son contenu -
+     le bandeau entier bascule alors sur le defilement horizontal de
+     secours (.header-main-row { overflow-x: auto }), deja prevu pour
+     ce cas plutot que de chevaucher du contenu. */
+.nav-desktop-slot { flex: 1; display: flex; justify-content: center; }
   .nav-desktop-slot .bottom-nav { justify-content: center; }
 
   .selector-box {
