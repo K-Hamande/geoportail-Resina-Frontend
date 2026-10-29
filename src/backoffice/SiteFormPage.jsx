@@ -5,6 +5,7 @@ import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost } from "../shared/backofficeApiClient";
 import SearchableSelect from "../shared/SearchableSelect";
 import ErrorBanner from "../shared/ErrorBanner";
+import Preloader from "../shared/Preloader";
 
 const TYPE_LABELS = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
 
@@ -103,7 +104,7 @@ function SiteFormPage() {
   }
 
   if (chargement) {
-    return <p style={{ padding: "32px" }}>Chargement...</p>;
+    return <Preloader />;
   }
 
   return (

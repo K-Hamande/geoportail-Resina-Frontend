@@ -1,5 +1,7 @@
-import { Globe, Check, X } from "lucide-react";
+import { Globe, Check, X, Factory, MapPin } from "lucide-react";
 import { getStatusLabel, getStatusIcon } from "../shared/statusStyles";
+import Preloader from "../shared/Preloader";
+import { estValeurUtile } from "../shared/valeurUtile";
 
 function badgeClass(status) {
   if (status === "KO") return "badge-ko";
@@ -26,7 +28,7 @@ function qualiteColor(niveau) {
 
 function AnpticStatusCard({ data }) {
   if (!data) {
-    return <div className="status-card">Chargement...</div>;
+    return <div className="status-card"><Preloader /></div>;
   }
 
   const StatutIcon = getStatusIcon(data.status);
@@ -87,10 +89,30 @@ function AnpticStatusCard({ data }) {
             </div>
           </div>
           <div className="metric-box">
+            <div className="metric-label">Perte de paquets</div>
+            <div className="metric-value">
+              {data.perteDePaquetsPct ?? "—"} <span className="metric-unit">%</span>
+            </div>
+          </div>
+          <div className="metric-box">
             <div className="metric-label">Dispo 30j</div>
             <div className="metric-value">
               {data.disponibilite30Jours} <span className="metric-unit">%</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {data.equipementPrincipal && [data.equipementPrincipal.vendor, data.equipementPrincipal.emplacement].some(estValeurUtile) && (
+        <div className="equipement-principal">
+          <div className="equipement-principal-titre">Équipement principal</div>
+          <div className="equipement-principal-grille">
+            {estValeurUtile(data.equipementPrincipal.vendor) && (
+              <span className="feq-chip" title="Fabricant"><Factory size={14} /> {data.equipementPrincipal.vendor}</span>
+            )}
+            {estValeurUtile(data.equipementPrincipal.emplacement) && (
+              <span className="feq-chip" title="Emplacement"><MapPin size={14} /> {data.equipementPrincipal.emplacement}</span>
+            )}
           </div>
         </div>
       )}

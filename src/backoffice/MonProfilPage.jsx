@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPost } from "../shared/backofficeApiClient";
 import ErrorBanner from "../shared/ErrorBanner";
+import Preloader from "../shared/Preloader";
 import Topbar from "./Topbar";
 
 const ROLE_LABELS = {
@@ -14,6 +15,7 @@ function MonProfilPage() {
   const { getAuthHeader, updatePassword } = useAuth();
   const [profil, setProfil] = useState(null);
   const [erreur, setErreur] = useState(null);
+  const [chargement, setChargement] = useState(false);
 
   const [motDePasseActuel, setMotDePasseActuel] = useState("");
   const [nouveauMotDePasse, setNouveauMotDePasse] = useState("");
@@ -22,8 +24,17 @@ function MonProfilPage() {
   const [messageSucces, setMessageSucces] = useState(null);
   const [enregistrement, setEnregistrement] = useState(false);
 
+  // BUG CORRIGE : le rafraichissement fonctionnait deja (reel appel API +
+  // mise a jour de "profil"), mais sans etat "chargement" transmis au
+  // Topbar, le bouton ne donnait AUCUN retour visuel (jamais "Actualisation...",
+  // jamais desactive) - vu que le profil change rarement, l'utilisateur
+  // avait l'impression que le bouton ne faisait rien.
   function charger() {
-    adminGet("/backoffice/api/v1/me", getAuthHeader()).then(setProfil).catch((e) => setErreur(e.message));
+    setChargement(true);
+    adminGet("/backoffice/api/v1/me", getAuthHeader())
+      .then(setProfil)
+      .catch((e) => setErreur(e.message))
+      .finally(() => setChargement(false));
   }
 
   useEffect(() => { charger(); }, []);
@@ -67,7 +78,7 @@ function MonProfilPage() {
 
   return (
     <>
-      <Topbar title="Mon profil" subtitle="Informations de votre compte et mot de passe" onRefresh={charger} />
+      <Topbar title="Mon profil" subtitle="Informations de votre compte et mot de passe" onRefresh={charger} chargement={chargement} />
       <div className="backoffice-content">
         <ErrorBanner message={erreur} onRetry={charger} />
 
@@ -91,7 +102,7 @@ function MonProfilPage() {
               </div>
             </div>
           ) : (
-            !erreur && <p>Chargement...</p>
+            !erreur && <Preloader />
           )}
         </div>
 

@@ -31,7 +31,7 @@ function DecideurLayout({ children, plainePage = false }) {
 
   return (
     <div className={plainePage ? "page page-pleine" : "page"}>
-      <Header nav={navDesktop} onLogout={logout} nomComplet={auth?.role}>
+      <Header nav={navDesktop} onLogout={logout} nomComplet={auth?.nomComplet} role={auth?.role} ministere={auth?.ministere}>
         {selecteur}
       </Header>
       <div className="page-content">{children}</div>

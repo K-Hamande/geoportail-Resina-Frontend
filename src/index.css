@@ -94,16 +94,20 @@ body {
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: linear-gradient(150deg, #FFDD5C, var(--color-flag-yellow));
-  color: #1F2937;
-  font-weight: 800;
+  background: white;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
   flex-shrink: 0;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
   position: relative;
+}
+
+.header-icon-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .header-titles { flex: 1; min-width: 0; position: relative; }
@@ -326,6 +330,61 @@ body {
 .spin-icon { animation: spin-icon-rotate 0.8s linear infinite; }
 @keyframes spin-icon-rotate { to { transform: rotate(360deg); } }
 
+/* ---- Prechargeur generique (shared/Preloader.jsx) ---- */
+.preloader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 80px 20px;
+  color: var(--color-text-muted, #6B7280);
+  font-size: 15px;
+  font-weight: 600;
+  width: 100%;
+}
+.preloader-spinner {
+  width: 56px;
+  height: 56px;
+  border: 5px solid rgba(10, 61, 122, 0.15);
+  border-top-color: var(--color-primary, #0A3D7A);
+  border-radius: 50%;
+  animation: spin-icon-rotate 0.7s linear infinite;
+}
+
+/* Variante plein ecran (par defaut) : logo ANPTIC qui pulse, en
+   superposition sur toute la page. */
+.preloader-plein-ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: var(--color-bg, #F5F7FA);
+}
+.preloader-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  animation: preloader-logo-pulse 1.3s ease-in-out infinite;
+}
+@keyframes preloader-logo-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.14); opacity: 0.7; }
+}
+.preloader-plein-ecran .preloader-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary, #0A3D7A);
+  letter-spacing: 0.3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .preloader-logo { animation: none; }
+}
+
 .status-badge { font-weight: 700; font-size: 11px; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
 .badge-ok { background: #E3F6EC; color: #53B889; }
 .badge-warn { background: #FDF1E0; color: #E2A744; }
@@ -389,6 +448,26 @@ body {
 }
 @media (min-width: 640px) {
   .metric-box:hover { transform: translateY(-1px); }
+}
+
+/* ---- Equipement principal (AnpticStatusCard) ---- */
+.equipement-principal {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(10, 61, 122, 0.08);
+}
+.equipement-principal-titre {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted, #6B7280);
+  margin-bottom: 8px;
+}
+.equipement-principal-grille {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--color-text-muted); margin-bottom: 4px; font-weight: 700; }
 .metric-value { font-family: var(--font-mono); font-size: 17px; font-weight: 700; color: var(--color-text); }
@@ -1237,6 +1316,17 @@ body {
 
 .floor-row.expanded .floor-chevron { transform: rotate(180deg); }
 
+.floor-row-texts { flex: 1; min-width: 0; }
+.floor-count-badge {
+  background: rgba(10, 61, 122, 0.08);
+  color: var(--color-primary);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
 .floor-equipment-list {
   margin-top: 10px;
   padding-top: 10px;
@@ -1246,26 +1336,79 @@ body {
   gap: 6px;
 }
 
+.floor-equipment-wrap {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(10, 61, 122, 0.08);
+}
+
 .floor-equipment-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 12px;
+  font-size: 13.5px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: background 0.15s;
 }
+.floor-equipment-cliquable { cursor: pointer; }
+.floor-equipment-cliquable:hover { background: rgba(10, 61, 122, 0.04); }
 
-.floor-equipment-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+/* Remplace l'ancien simple point de couleur : meme code couleur par
+   statut, mais sous forme de pastille avec l'icone du type d'equipement
+   (Wi-Fi / commutateur) a l'interieur - plus lisible qu'un point seul. */
+.floor-equipment-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
-.floor-equipment-dot.ok { background: var(--color-ok); }
-.floor-equipment-dot.warn { background: var(--color-warn); }
-.floor-equipment-dot.ko { background: var(--color-ko); }
-.floor-equipment-dot.unknown { background: var(--color-unknown); }
+.floor-equipment-icon.ok { background: #E3F6EC; color: var(--color-ok); }
+.floor-equipment-icon.warn { background: #FDF1E0; color: var(--color-warn); }
+.floor-equipment-icon.ko { background: #FBE4E4; color: var(--color-ko); }
+.floor-equipment-icon.unknown { background: #EDEFF2; color: var(--color-unknown); }
 
-.floor-equipment-name { flex: 1; font-weight: 600; }
-.floor-equipment-type { color: var(--color-text-muted); font-size: 11px; }
+.floor-equipment-infos { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.floor-equipment-name { font-weight: 700; }
+.floor-equipment-type { color: var(--color-text-muted); font-size: 12px; }
+
+.floor-equipment-chevron { color: var(--color-text-muted); flex-shrink: 0; transition: transform 0.15s; }
+.floor-equipment-chevron.expanded { transform: rotate(180deg); }
+
+/* Panneau de details par equipement : grille 2 colonnes d'icone+valeur,
+   plutot qu'une simple liste de texte. */
+.floor-equipment-details {
+  margin: 0 10px 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(10, 61, 122, 0.12);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Chip compacte icone + valeur (le libelle du champ passe en tooltip
+   "title" plutot qu'en texte visible - plus dense, moins de bruit visuel
+   qu'une liste de lignes "Libellé: valeur"). Reutilisee pour l'equipement
+   principal (AnpticStatusCard) et chaque equipement du reseau batimentaire
+   (LanStatusCard). */
+.feq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(10, 61, 122, 0.06);
+  color: var(--color-text);
+  border-radius: 999px;
+  padding: 7px 14px 7px 11px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.feq-chip svg { color: var(--color-primary); flex-shrink: 0; }
 
 @media (min-width: 1024px) {
   /* Bascule : on cache la barre basse mobile, on affiche la version
@@ -2696,6 +2839,7 @@ body {
 .backoffice-shell .kpi-icon-orange { background: linear-gradient(135deg, #FBBF24, #C97C0A); }
 .backoffice-shell .kpi-icon-red { background: linear-gradient(135deg, #F87171, #D93535); }
 .backoffice-shell .kpi-icon-navy { background: linear-gradient(135deg, #3B82F6, #0A3D7A); }
+.backoffice-shell .kpi-icon-grey { background: linear-gradient(135deg, #9AA3B5, #5B6478); }
 
 .backoffice-shell .kpi-card-label {
   font-size: 10px;
@@ -2735,6 +2879,23 @@ body {
 }
 .backoffice-shell .health-icon { font-size: 22px; }
 .backoffice-shell .health-panel-header h2 { font-family: var(--bo-font-display); font-size: 17px; margin: 0; color: var(--bo-ink); }
+
+.backoffice-shell .health-panel-header-toggle {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.backoffice-shell .health-panel-chevron {
+  margin-left: auto;
+  color: var(--bo-ink-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.backoffice-shell .health-panel-chevron-ouvert { transform: rotate(180deg); }
 
 .backoffice-shell .health-panel-body {
   display: grid;
@@ -2825,6 +2986,18 @@ body {
   height: 100%;
   border-radius: 3px;
   transition: width 0.4s;
+}
+
+/* Resultat de l'import CSV de sites */
+.backoffice-shell .import-resultat-panel { border-left: 4px solid var(--bo-ok); }
+.backoffice-shell .import-resultat-panel.import-resultat-avec-erreurs { border-left-color: var(--bo-warn); }
+.backoffice-shell .import-resultat-erreurs {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--bo-warn);
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 /* Panneau Sites en attention */
@@ -2990,6 +3163,7 @@ body {
 .backoffice-shell .kpi-value-green { color: var(--bo-ok); }
 .backoffice-shell .kpi-value-orange { color: var(--bo-warn); }
 .backoffice-shell .kpi-value-red { color: var(--bo-ko); }
+.backoffice-shell .kpi-value-grey { color: var(--bo-ink-muted); }
 
 /* Legende du cercle sante : 3 cartes distinctes */
 .backoffice-shell .health-legend-grid {
@@ -3073,6 +3247,74 @@ body {
 .backoffice-shell .pill-ok { background: #E3F6EC; color: var(--bo-ok); }
 .backoffice-shell .pill-warn { background: #FDF1E0; color: var(--bo-warn); }
 .backoffice-shell .pill-ko { background: #FCE8E8; color: var(--bo-ko); }
+.backoffice-shell .pill-inconnu { background: #EEF0F4; color: var(--bo-ink-muted); }
+
+/* Onglets du panneau "Sites necessitant une attention" (section II du
+   compte rendu des amendements : onglet dedie au statut "Inconnu") */
+.backoffice-shell .attention-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 14px;
+  border-bottom: 1px solid var(--bo-border);
+}
+.backoffice-shell .attention-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bo-ink-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.backoffice-shell .attention-tab-actif {
+  color: var(--bo-primary);
+  border-bottom-color: var(--bo-primary);
+}
+.backoffice-shell .attention-tab-count {
+  background: var(--bo-border);
+  color: var(--bo-ink-muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+.backoffice-shell .attention-tab-actif .attention-tab-count {
+  background: var(--bo-primary);
+  color: white;
+}
+.backoffice-shell .attention-tab-note {
+  font-size: 12px;
+  color: var(--bo-ink-muted);
+  margin: -4px 0 14px;
+}
+
+/* Repartition des equipements par niveau de gravite (section II) */
+.backoffice-shell .gravite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.backoffice-shell .gravite-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  text-align: center;
+}
+.backoffice-shell .gravite-value { font-size: 24px; font-weight: 700; }
+.backoffice-shell .gravite-label { font-size: 12px; font-weight: 600; opacity: 0.85; }
+.backoffice-shell .gravite-normal { background: #E3F6EC; color: var(--bo-ok); }
+.backoffice-shell .gravite-intermediaire { background: #FDF1E0; color: var(--bo-warn); }
+.backoffice-shell .gravite-majeur { background: #FCE4D6; color: #B8560D; }
+.backoffice-shell .gravite-critique { background: #FCE8E8; color: var(--bo-ko); }
+.backoffice-shell .gravite-inconnu { background: #EEF0F4; color: var(--bo-ink-muted); }
 
 /* Variante icone seule (sans libelle) - ex. actions Modifier/Activer/
    Supprimer de la page Comptes Decideurs. Specificite doublee (.btn-voir

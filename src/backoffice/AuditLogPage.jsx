@@ -8,6 +8,7 @@ import { adminGet } from "../shared/backofficeApiClient";
 import Topbar from "./Topbar";
 import SearchableSelect from "../shared/SearchableSelect";
 import ErrorBanner from "../shared/ErrorBanner";
+import Preloader from "../shared/Preloader";
 
 // Transforme "Xavier KIWALO" en "KIWALO X." (nom de famille en majuscules
 // + initiale du prenom), pour reprendre exactement le format d'affichage
@@ -317,7 +318,7 @@ function AuditLogPage() {
             </div>
           </div>
 
-          {chargement && <p>Chargement...</p>}
+          {chargement && <Preloader />}
 
           {!chargement && groupesParJour.map((groupe) => (
             <div key={groupe.libelle}>

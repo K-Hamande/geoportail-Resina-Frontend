@@ -14,13 +14,20 @@ function DecideurUsersPage() {
   const [users, setUsers] = useState([]);
   const [ministeres, setMinisteres] = useState([]);
   const [erreur, setErreur] = useState(null);
+  const [chargement, setChargement] = useState(false);
   const [modaleOuverte, setModaleOuverte] = useState(false);
   const [userEdite, setUserEdite] = useState(null);
   const [form, setForm] = useState({ login: "", nomComplet: "", email: "", motDePasse: "", role: "DECIDEUR", ministere: "" });
 
+  // BUG CORRIGE : rafraichissement deja effectif (reel appel API + mise a
+  // jour de "users"), mais sans etat "chargement" transmis au Topbar, le
+  // bouton ne donnait aucun retour visuel.
   function charger() {
-    adminGet("/backoffice/api/v1/decideur-users", getAuthHeader()).then(setUsers).catch((e) => setErreur(e.message));
-    adminGet("/backoffice/api/v1/ministry-tokens/ministeres", getAuthHeader()).then(setMinisteres).catch(() => {});
+    setChargement(true);
+    Promise.allSettled([
+      adminGet("/backoffice/api/v1/decideur-users", getAuthHeader()).then(setUsers).catch((e) => setErreur(e.message)),
+      adminGet("/backoffice/api/v1/ministry-tokens/ministeres", getAuthHeader()).then(setMinisteres).catch(() => {}),
+    ]).finally(() => setChargement(false));
   }
 
   useEffect(() => { charger(); }, []);
@@ -76,7 +83,7 @@ function DecideurUsersPage() {
 
   return (
     <>
-      <Topbar title="Comptes Décideurs" subtitle="Gestion des accès à l'interface décideur" onRefresh={charger} />
+      <Topbar title="Comptes Décideurs" subtitle="Gestion des accès à l'interface décideur" onRefresh={charger} chargement={chargement} />
       <div className="backoffice-content">
         <ErrorBanner message={erreur} onRetry={charger} />
 

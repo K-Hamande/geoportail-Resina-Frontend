@@ -5,6 +5,7 @@ import L from "leaflet";
 import { Menu, UserRound, ChevronDown, LogOut, Building2, Landmark, Cable } from "lucide-react";
 import { apiGet } from "../shared/apiClient";
 import ErrorBanner from "../shared/ErrorBanner";
+import Preloader from "../shared/Preloader";
 import { estConnecteDecideur, getDecideurAuth, clearDecideurAuth } from "../shared/decideurAuth";
 
 // Page d'accueil publique de la partie lambda : reproduction fidele de
@@ -195,13 +196,13 @@ function LambdaListePage() {
 
           {connecte ? (
             <div className="lambda-user">
-              <span className="lambda-user-name">{auth?.role}</span>
+              <span className="lambda-user-name">{auth?.nomComplet || (auth?.role === "LAMBDA" ? "Observateur" : auth?.ministere)}</span>
               <button className="lambda-logout" onClick={deconnecter} title="Se déconnecter"><LogOut size={15} /></button>
             </div>
           ) : (
             <button className="lambda-connexion-btn" onClick={() => navigate("/login")}>
               <UserRound size={15} />
-              Connexion décideur
+              Connexion
               <ChevronDown size={14} />
             </button>
           )}
@@ -262,7 +263,7 @@ function LambdaListePage() {
 
         <div className="lambda-map-full-wrap">
           {erreur && <div className="lambda-map-erreur"><ErrorBanner message={erreur} onRetry={charger} /></div>}
-          {chargement && <p style={{ textAlign: "center", padding: "40px" }}>Chargement de la carte...</p>}
+          {chargement && <Preloader label="Chargement de la carte..." />}
           {!chargement && geojson && (
             <MapContainer
               ref={mapRef}

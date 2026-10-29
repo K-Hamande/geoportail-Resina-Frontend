@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { ClipboardList, Clock, Check, Ban, TriangleAlert, Siren, X, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { ClipboardList, Clock, Check, Ban, TriangleAlert, Siren, X, Download, ChevronLeft, ChevronRight, Activity } from "lucide-react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminGetFichier, declencherTelechargement } from "../shared/backofficeApiClient";
 import { formaterDureeMinutes } from "../shared/timeFormat";
 import SearchableSelect from "../shared/SearchableSelect";
 import ErrorBanner from "../shared/ErrorBanner";
+import Preloader from "../shared/Preloader";
 import Topbar from "./Topbar";
 
 const PERIODES = [
@@ -96,7 +97,7 @@ function IncidentsHistoriquePage() {
 // le nouvel onglet "Incidents iTop" ci-dessous. ----
 function OngletAlertesReseau({ getAuthHeader, ministeres }) {
   const [incidents, setIncidents] = useState([]);
-  const [stats, setStats] = useState({ total: 0, resolus: 0, enCours: 0, ko: 0, warn: 0 });
+  const [stats, setStats] = useState({ total: 0, resolus: 0, enCours: 0, ko: 0, warn: 0, disponibilitePct: null, indisponibilitePct: null });
   const [page, setPage] = useState(0); // 0-indexé côté API
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -199,6 +200,21 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
                 <div className="eq-stat-bar-fill" style={{ width: "100%", background: "#0A3D7A" }}></div>
               </div>
               <div className="eq-stat-pct">100%</div>
+            </div>
+          </div>
+          <div className="eq-stat-card" style={{ borderTop: "3px solid #0D9B5A" }}>
+            <div className="eq-stat-icon"><Activity size={20} /></div>
+            <div style={{ flex: 1 }}>
+              <div className="eq-stat-label">DISPONIBILITÉ (PÉRIODE)</div>
+              <div className="eq-stat-value">
+                {stats.disponibilitePct != null ? `${stats.disponibilitePct}%` : "—"}
+              </div>
+              <div className="eq-stat-bar">
+                <div className="eq-stat-bar-fill" style={{ width: `${stats.disponibilitePct ?? 0}%`, background: "#0D9B5A" }}></div>
+              </div>
+              <div className="eq-stat-pct">
+                {stats.indisponibilitePct != null ? `${stats.indisponibilitePct}% indispo.` : "Aucun site actif pour ce filtre"}
+              </div>
             </div>
           </div>
           <div className="eq-stat-card" style={{ borderTop: "3px solid #D93535" }}>
@@ -322,7 +338,15 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
           </p>
         )}
 
-        {chargement && <p>Chargement...</p>}
+        {/* Section V du compte rendu des amendements : "Disponibilite
+            (site)" et "Nb incidents (site)" sont calcules pour LE SITE de
+            chaque ligne, sur les memes filtres actifs (periode/date, type,
+            ministere, recherche) que le reste du tableau. */}
+        <p style={{ color: "var(--bo-ink-muted)", marginTop: "-4px", marginBottom: "10px", fontSize: "12.5px" }}>
+          « Disponibilité (site) » et « Nb incidents (site) » sont calculés pour le site de chaque ligne, sur la période et les filtres actifs ci-dessus.
+        </p>
+
+        {chargement && <Preloader />}
 
         {!chargement && incidents.length > 0 && (
           <>
@@ -334,9 +358,11 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
                   <th>MINISTÈRE</th>
                   <th>TYPE</th>
                   <th>STATUT</th>
-                  <th>DÉBUT</th>
+                  <th>DATE D'INCIDENT</th>
                   <th>FIN</th>
                   <th>DURÉE</th>
+                  <th>DISPONIBILITÉ (SITE)</th>
+                  <th>NB INCIDENTS (SITE)</th>
                 </tr>
               </thead>
               <tbody>
@@ -358,6 +384,10 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
                         : formaterDateHeure(incident.finLe)}
                     </td>
                     <td className="alerte-cell">{formaterDureeMinutes(incident.dureeMinutes)}</td>
+                    <td className="alerte-cell">
+                      {incident.disponibiliteSitePct != null ? `${incident.disponibiliteSitePct}%` : <span style={{ color: "var(--bo-ink-muted)" }}>—</span>}
+                    </td>
+                    <td className="alerte-cell">{incident.nombreIncidentsSite}</td>
                   </tr>
                 ))}
               </tbody>
@@ -602,7 +632,17 @@ function OngletIncidentsItop({ getAuthHeader, ministeres }) {
           </p>
         )}
 
-        {chargement && <p>Chargement...</p>}
+        {/* Section V du compte rendu des amendements : les tickets iTop
+            n'ayant pas de site precis rattache (seulement un ministere),
+            "Nb incidents" est calcule par ministere et non par site
+            (contrairement a l'onglet "Alertes reseau") - pas de notion de
+            "disponibilite" ici, qui n'aurait pas de sens sans population
+            de sites. */}
+        <p style={{ color: "var(--bo-ink-muted)", marginTop: "-4px", marginBottom: "10px", fontSize: "12.5px" }}>
+          « Nb incidents (ministère) » est calculé par ministère (les tickets iTop n'ont pas de site précis rattaché), sur la période et les filtres actifs ci-dessus.
+        </p>
+
+        {chargement && <Preloader />}
 
         {!chargement && tickets.length > 0 && (
           <>
@@ -613,8 +653,9 @@ function OngletIncidentsItop({ getAuthHeader, ministeres }) {
                   <th>TITRE</th>
                   <th>MINISTÈRE</th>
                   <th>STATUT</th>
-                  <th>DÉBUT</th>
+                  <th>DATE D'INCIDENT</th>
                   <th>CLÔTURE</th>
+                  <th>NB INCIDENTS (MINISTÈRE)</th>
                 </tr>
               </thead>
               <tbody>
@@ -632,6 +673,7 @@ function OngletIncidentsItop({ getAuthHeader, ministeres }) {
                           ? formaterDateHeure(ticket.clotureLe)
                           : <span className="status-pill pill-ko">En cours</span>}
                       </td>
+                      <td className="alerte-cell">{ticket.nombreTicketsMinistere}</td>
                     </tr>
                   );
                 })}

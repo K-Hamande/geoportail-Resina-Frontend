@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { Menu, Building2, X, Pencil, RefreshCw, Pause, Play, ChevronLeft, ChevronRight, Circle } from "lucide-react";
+import { Menu, Building2, X, Pencil, RefreshCw, Pause, Play, ChevronLeft, ChevronRight, Circle, Upload } from "lucide-react";
 import { useAuth } from "../shared/AuthContext";
-import { adminGet, adminPost } from "../shared/backofficeApiClient";
+import { adminGet, adminPost, adminPostFichier } from "../shared/backofficeApiClient";
 import SearchableSelect from "../shared/SearchableSelect";
 import ErrorBanner from "../shared/ErrorBanner";
+import Preloader from "../shared/Preloader";
 
 const TAILLE_PAGE = 20;
 
@@ -17,10 +18,18 @@ function SitesPage() {
   const [filtreProvince, setFiltreProvince] = useState("");
   const [filtreVille, setFiltreVille] = useState("");
   const [filtreMinistere, setFiltreMinistere] = useState("");
+  // Section I du compte rendu des amendements : permettre de n'afficher
+  // que les sites ayant au moins un equipement rattache (des sites a 0
+  // equipement existent - cf. deux pipelines de synchronisation NetXMS
+  // independants pour les sites et les equipements).
+  const [avecEquipementUniquement, setAvecEquipementUniquement] = useState(false);
   const [pageCourante, setPageCourante] = useState(1);
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [derniereMaj, setDerniereMaj] = useState(new Date());
+  const [importEnCours, setImportEnCours] = useState(false);
+  const [resultatImport, setResultatImport] = useState(null);
+  const inputFichierRef = useRef(null);
 
   function charger() {
     setChargement(true);
@@ -41,7 +50,7 @@ function SitesPage() {
   // retrouver sur une page vide si les resultats filtrés sont peu nombreux)
   useEffect(() => {
     setPageCourante(1);
-  }, [filtreNom, filtreRegion, filtreProvince, filtreVille, filtreMinistere]);
+  }, [filtreNom, filtreRegion, filtreProvince, filtreVille, filtreMinistere, avecEquipementUniquement]);
 
   async function toggleActive(site) {
     const action = site.actif ? "deactivate" : "activate";
@@ -50,6 +59,32 @@ function SitesPage() {
       charger();
     } catch (err) {
       setErreur(err.message);
+    }
+  }
+
+  // Import CSV de sites (section VI du compte rendu des amendements),
+  // en complement de l'import NetXMS - utile pour des sites pas encore
+  // remontes par NetXMS, ou pour corriger/completer en masse.
+  function choisirFichierCsv() {
+    inputFichierRef.current?.click();
+  }
+
+  async function importerFichierCsv(e) {
+    const fichier = e.target.files?.[0];
+    e.target.value = ""; // permet de re-selectionner le meme fichier ensuite
+    if (!fichier) return;
+
+    setImportEnCours(true);
+    setResultatImport(null);
+    setErreur(null);
+    try {
+      const resultat = await adminPostFichier("/backoffice/api/v1/sites/import-csv", getAuthHeader(), fichier);
+      setResultatImport(resultat);
+      charger();
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setImportEnCours(false);
     }
   }
 
@@ -94,9 +129,10 @@ function SitesPage() {
     setFiltreProvince("");
     setFiltreVille("");
     setFiltreMinistere("");
+    setAvecEquipementUniquement(false);
   }
 
-  const aDesFiltres = filtreNom || filtreRegion || filtreProvince || filtreVille || filtreMinistere;
+  const aDesFiltres = filtreNom || filtreRegion || filtreProvince || filtreVille || filtreMinistere || avecEquipementUniquement;
 
   const sitesFiltres = sites.filter((site) => {
     if (filtreNom && !site.nom.toLowerCase().includes(filtreNom.toLowerCase())) return false;
@@ -104,8 +140,11 @@ function SitesPage() {
     if (filtreProvince && site.province !== filtreProvince) return false;
     if (filtreVille && site.ville !== filtreVille) return false;
     if (filtreMinistere && site.ministere !== filtreMinistere) return false;
+    if (avecEquipementUniquement && (site.nombreEquipements ?? 0) === 0) return false;
     return true;
   });
+
+  const sitesSansEquipement = sites.filter((s) => (s.nombreEquipements ?? 0) === 0).length;
 
   const totalPages = Math.max(1, Math.ceil(sitesFiltres.length / TAILLE_PAGE));
   const pageActuelle = Math.min(pageCourante, totalPages);
@@ -162,6 +201,26 @@ function SitesPage() {
       <div className="backoffice-content dashboard-content">
         <ErrorBanner message={erreur} onRetry={charger} />
 
+        {resultatImport && (
+          <div className={`panel import-resultat-panel ${resultatImport.erreurs.length > 0 ? "import-resultat-avec-erreurs" : ""}`}>
+            <div className="panel-header">
+              <h2>Résultat de l'import CSV</h2>
+              <button className="btn-outline" onClick={() => setResultatImport(null)}><X size={13} /> Fermer</button>
+            </div>
+            <p>
+              {resultatImport.lignesTraitees} ligne(s) traitée(s) — {resultatImport.crees} créé(s), {resultatImport.modifies} modifié(s)
+              {resultatImport.erreurs.length > 0 && `, ${resultatImport.erreurs.length} erreur(s)`}
+            </p>
+            {resultatImport.erreurs.length > 0 && (
+              <ul className="import-resultat-erreurs">
+                {resultatImport.erreurs.map((e, idx) => (
+                  <li key={idx}>Ligne {e.ligne} : {e.message}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         <div className="panel attention-panel">
           <div className="panel-header" style={{ flexWrap: "wrap", gap: "8px" }}>
             <h2><Building2 size={16} className="panel-title-icon" /> Sites configurés <span className="attention-count" style={{ background: "var(--bo-primary)" }}>{sitesFiltres.length}</span></h2>
@@ -205,9 +264,36 @@ function SitesPage() {
                 </SearchableSelect>
               </div>
 
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", alignSelf: "flex-end", paddingBottom: "8px" }}>
+                <input
+                  type="checkbox"
+                  checked={avecEquipementUniquement}
+                  onChange={(e) => setAvecEquipementUniquement(e.target.checked)}
+                />
+                Avec équipement uniquement
+                {sitesSansEquipement > 0 && !avecEquipementUniquement && (
+                  <span className="status-badge badge-warn">{sitesSansEquipement} sans équipement</span>
+                )}
+              </label>
+
               {aDesFiltres && (
                 <button className="btn-outline" onClick={effacerFiltres}><X size={13} /> Effacer les filtres</button>
               )}
+
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                ref={inputFichierRef}
+                style={{ display: "none" }}
+                onChange={importerFichierCsv}
+              />
+              <button
+                className="btn-outline"
+                onClick={choisirFichierCsv}
+                disabled={importEnCours}
+              >
+                <Upload size={13} /> {importEnCours ? "Import en cours…" : "Importer (CSV)"}
+              </button>
 
               <Link to="/backoffice/sites/new" className="topbar-refresh" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
                 + Nouveau site
@@ -215,7 +301,7 @@ function SitesPage() {
             </div>
           </div>
 
-          {chargement && <p>Chargement...</p>}
+          {chargement && <Preloader />}
 
           {!chargement && sitesPage.length > 0 && (
             <>

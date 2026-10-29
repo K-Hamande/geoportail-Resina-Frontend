@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Building2, Plug, MessageCircle, Phone, ChevronDown } from "lucide-react";
+import { Building2, Plug, MessageCircle, Phone, ChevronDown, Wifi, Router, Factory, MapPin, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { getStatusIcon } from "../shared/statusStyles";
+import Preloader from "../shared/Preloader";
+import { estValeurUtile } from "../shared/valeurUtile";
 
 function classFor(status) {
   if (status === "KO") return "ko";
@@ -10,6 +12,7 @@ function classFor(status) {
 }
 
 const TYPE_LABELS = { BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur" };
+const TYPE_ICONS = { BORNE_WIFI: Wifi, COMMUTATEUR: Router };
 
 function normaliserNumero(numero) {
   if (!numero) return null;
@@ -71,9 +74,13 @@ function ContactDsiPanel(props) {
 
 function LanStatusCard({ data }) {
   const [etagesOuverts, setEtagesOuverts] = useState(new Set());
+  // Section IV du compte rendu des amendements : consulter les
+  // informations detaillees de CHAQUE equipement d'un etage, pas
+  // seulement le resume (statut/nom/type) deja affiche.
+  const [equipementsOuverts, setEquipementsOuverts] = useState(new Set());
 
   if (!data) {
-    return <div className="status-card">Chargement...</div>;
+    return <div className="status-card"><Preloader /></div>;
   }
 
   function basculerEtage(nom) {
@@ -81,6 +88,15 @@ function LanStatusCard({ data }) {
       const suivant = new Set(prev);
       if (suivant.has(nom)) suivant.delete(nom);
       else suivant.add(nom);
+      return suivant;
+    });
+  }
+
+  function basculerEquipement(id) {
+    setEquipementsOuverts((prev) => {
+      const suivant = new Set(prev);
+      if (suivant.has(id)) suivant.delete(id);
+      else suivant.add(id);
       return suivant;
     });
   }
@@ -158,22 +174,57 @@ function LanStatusCard({ data }) {
               >
                 <div className="floor-row-header">
                   <span className={`floor-dot ${classFor(etage.status)}`}></span>
-                  <div>
+                  <div className="floor-row-texts">
                     <div className="floor-name">{etage.etage}</div>
                     <div className="floor-detail">{etage.detail}</div>
                   </div>
+                  <span className="floor-count-badge">{etage.equipements.length}</span>
                   <ChevronDown size={14} className="floor-chevron" />
                 </div>
 
                 {ouvert && (
                   <div className="floor-equipment-list" onClick={ignorerClicParent}>
-                    {etage.equipements.map((eq) => (
-                      <div key={eq.id} className="floor-equipment-item">
-                        <span className={`floor-equipment-dot ${classFor(eq.status)}`}></span>
-                        <span className="floor-equipment-name">{eq.libelleAffiche}</span>
-                        <span className="floor-equipment-type">{TYPE_LABELS[eq.type] ?? eq.type}</span>
-                      </div>
-                    ))}
+                    {etage.equipements.map((eq) => {
+                      const aDesDetails = [eq.vendor, eq.emplacement, eq.trafficEntrant, eq.trafficSortant]
+                        .some(estValeurUtile);
+                      const equipementOuvert = equipementsOuverts.has(eq.id);
+                      const TypeIcone = TYPE_ICONS[eq.type] ?? Router;
+                      return (
+                        <div key={eq.id} className="floor-equipment-wrap">
+                          <div
+                            className={`floor-equipment-item ${aDesDetails ? "floor-equipment-cliquable" : ""}`}
+                            onClick={aDesDetails ? () => basculerEquipement(eq.id) : undefined}
+                          >
+                            <span className={`floor-equipment-icon ${classFor(eq.status)}`}>
+                              <TypeIcone size={16} />
+                            </span>
+                            <span className="floor-equipment-infos">
+                              <span className="floor-equipment-name">{eq.libelleAffiche}</span>
+                              <span className="floor-equipment-type">{TYPE_LABELS[eq.type] ?? eq.type}</span>
+                            </span>
+                            {aDesDetails && (
+                              <ChevronDown size={15} className={`floor-equipment-chevron ${equipementOuvert ? "expanded" : ""}`} />
+                            )}
+                          </div>
+                          {equipementOuvert && aDesDetails && (
+                            <div className="floor-equipment-details">
+                              {estValeurUtile(eq.vendor) && (
+                                <span className="feq-chip" title="Fabricant"><Factory size={14} /> {eq.vendor}</span>
+                              )}
+                              {estValeurUtile(eq.emplacement) && (
+                                <span className="feq-chip" title="Emplacement"><MapPin size={14} /> {eq.emplacement}</span>
+                              )}
+                              {estValeurUtile(eq.trafficEntrant) && (
+                                <span className="feq-chip" title="Trafic entrant"><ArrowDownToLine size={14} /> {eq.trafficEntrant}</span>
+                              )}
+                              {estValeurUtile(eq.trafficSortant) && (
+                                <span className="feq-chip" title="Trafic sortant"><ArrowUpFromLine size={14} /> {eq.trafficSortant}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

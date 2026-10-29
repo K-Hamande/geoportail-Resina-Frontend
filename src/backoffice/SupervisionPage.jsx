@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminPut, adminDelete } from "../shared/backofficeApiClient";
+import Preloader from "../shared/Preloader";
 import Topbar from "./Topbar";
 
 // §3.2.6b du CDC : configuration des parametres de supervision par site
@@ -19,17 +20,32 @@ function SupervisionPage() {
   const [brouillon, setBrouillon] = useState(null);
   const [erreur, setErreur] = useState(null);
   const [message, setMessage] = useState(null);
+  const [chargement, setChargement] = useState(false);
 
+  // BUG CORRIGE : ne resynchronisait "brouillon" (le formulaire REELLEMENT
+  // affiche a droite) que si aucun site n'etait encore selectionne -
+  // c'est-a-dire uniquement au tout premier chargement. Une fois un site
+  // choisi (donc en permanence une fois la page utilisee), un clic sur
+  // "Actualiser" mettait bien a jour "settings" (la liste de gauche) mais
+  // jamais "brouillon" - le formulaire semblait fige, comme si le bouton
+  // ne faisait rien. On resynchronise maintenant "brouillon" pour le site
+  // ACTUELLEMENT selectionne a chaque chargement, pas seulement le premier.
   function charger() {
+    setChargement(true);
     adminGet("/backoffice/api/v1/supervision", getAuthHeader())
       .then((data) => {
         setSettings(data);
-        if (data.length > 0 && !siteId) {
-          setSiteId(data[0].siteId);
-          setBrouillon(data[0]);
+        if (data.length > 0) {
+          const siteActuel = siteId ?? data[0].siteId;
+          const s = data.find((x) => x.siteId === siteActuel);
+          if (s) {
+            setSiteId(siteActuel);
+            setBrouillon({ ...s });
+          }
         }
       })
-      .catch((err) => setErreur(err.message));
+      .catch((err) => setErreur(err.message))
+      .finally(() => setChargement(false));
   }
 
   useEffect(() => {
@@ -94,15 +110,15 @@ function SupervisionPage() {
   if (!brouillon) {
     return (
       <>
-        <Topbar title="Paramètres supervision" subtitle="Seuils d'alerte et intervalles par site" onRefresh={charger} />
-        <div className="backoffice-content"><p>Chargement...</p></div>
+        <Topbar title="Paramètres supervision" subtitle="Seuils d'alerte et intervalles par site" onRefresh={charger} chargement={chargement} />
+        <div className="backoffice-content"><Preloader /></div>
       </>
     );
   }
 
   return (
     <>
-      <Topbar title="Paramètres supervision" subtitle="Seuils d'alerte, intervalle d'actualisation et notifications par site" onRefresh={charger} />
+      <Topbar title="Paramètres supervision" subtitle="Seuils d'alerte, intervalle d'actualisation et notifications par site" onRefresh={charger} chargement={chargement} />
 
       <div className="backoffice-content">
         {erreur && <p className="sup-message ko"><TriangleAlert size={14} /> Erreur : {erreur}</p>}

@@ -67,6 +67,32 @@ export async function adminGetFichier(path, authHeader) {
   return { blob, nomFichier };
 }
 
+// Pour l'upload de fichier (ex: import CSV) - pas de Content-Type manuel,
+// le navigateur fixe le boundary multipart lui-meme ; on ne peut pas
+// reutiliser request() qui force toujours "application/json".
+export async function adminPostFichier(path, authHeader, fichier) {
+  const formData = new FormData();
+  formData.append("fichier", fichier);
+
+  let response;
+  try {
+    response = await fetch(path, {
+      method: "POST",
+      headers: { Authorization: authHeader },
+      body: formData,
+    });
+  } catch {
+    throw erreurConnexionImpossible();
+  }
+
+  if (!response.ok) {
+    throw await construireErreurApi(response);
+  }
+
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
 function extraireNomFichier(contentDisposition) {
   if (!contentDisposition) return "export.csv";
   const correspondance = /filename="?([^"]+)"?/.exec(contentDisposition);

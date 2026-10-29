@@ -8,6 +8,7 @@ import { adminGet, adminPost, adminPut } from "../shared/backofficeApiClient";
 import { useOutletContext } from "react-router-dom";
 import SearchableSelect from "../shared/SearchableSelect";
 import ErrorBanner from "../shared/ErrorBanner";
+import Preloader from "../shared/Preloader";
 
 const TYPE_LABELS = {
   BORNE_WIFI: "Borne Wi-Fi", COMMUTATEUR: "Commutateur (Switch)",
@@ -381,7 +382,7 @@ function EquipmentsPage() {
             </div>
           </div>
 
-          {chargementEq && <p>Chargement...</p>}
+          {chargementEq && <Preloader />}
 
           {!chargementEq && equipementsPage.length > 0 && (
             <>
