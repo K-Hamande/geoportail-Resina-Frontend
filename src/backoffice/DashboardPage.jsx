@@ -240,15 +240,21 @@ function DashboardPage() {
               <div className="kpi-card-sub">{pctOk}% du parc</div>
             </div>
           </div>
-          {/* BUG CORRIGE (compte rendu des amendements, section I) : "Site
-              degrade" designe desormais exclusivement les sites en zone
-              d'insecurite (notion en attente de validation metier, section
-              VIII.3) - le compteur WARN affiche ici sous cet intitule n'avait
-              plus sa place. Remplace par le statut "Inconnu", qui correspond
-              en pratique le plus souvent a une zone d'insecurite (site
-              injoignable par NetXMS) - sans l'affirmer automatiquement,
-              conformement a la section II de l'amendement ("sans les
-              classer automatiquement parmi les sites degrades"). */}
+          {/* BUG CORRIGE (retour utilisateur du 30/10/2026) : le total
+              "SITES CONFIGURES" ne correspondait plus a la somme des autres
+              cartes (operationnels + inconnu + hors service) depuis le
+              retrait de cette carte "degrades" (remplacee a une etape
+              precedente par "Statut inconnu"). Remise en place pour que le
+              total s'additionne correctement : total = ok + degrades (WARN)
+              + inconnu + hors service. */}
+          <div className="kpi-card-v2">
+            <div className="kpi-card-icon kpi-icon-orange"><TriangleAlert size={22} /></div>
+            <div>
+              <div className="kpi-card-label">SITES DÉGRADÉS</div>
+              <div className="kpi-card-value kpi-value-orange">{warn}</div>
+              <div className="kpi-card-sub">{pctWarn}% du parc</div>
+            </div>
+          </div>
           <div className="kpi-card-v2">
             <div className="kpi-card-icon kpi-icon-grey"><HelpCircle size={22} /></div>
             <div>

@@ -300,10 +300,6 @@ function SitesPage() {
               >
                 <Upload size={13} /> {importEnCours ? "Import en cours…" : "Importer (CSV)"}
               </button>
-
-              <Link to="/backoffice/sites/new" className="topbar-refresh" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-                + Nouveau site
-              </Link>
             </div>
           </div>
 

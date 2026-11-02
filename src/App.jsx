@@ -129,7 +129,10 @@ function App() {
             <Route path="notifications" element={<NotificationsAdminPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="audit-log" element={<AuditLogPage />} />
-            <Route path="sites/new" element={<SiteFormPage />} />
+            {/* Retour utilisateur du 30/10/2026 : plus de creation manuelle
+                de site (uniquement via import CSV ou synchro NetXMS) -
+                route "sites/new" retiree, SiteFormPage reste utilise en
+                edition seule. */}
             <Route path="sites/:siteId/edit" element={<SiteFormPage />} />
             <Route path="ministry-tokens" element={<MinistryTokensPage />} />
             <Route path="supervision" element={<SupervisionPage />} />

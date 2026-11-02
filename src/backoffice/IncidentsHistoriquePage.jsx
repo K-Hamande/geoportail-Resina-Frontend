@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ClipboardList, Clock, Check, Ban, TriangleAlert, Siren, X, Download, ChevronLeft, ChevronRight, Activity } from "lucide-react";
+import { ClipboardList, Clock, Check, Ban, TriangleAlert, Siren, X, Download, ChevronLeft, ChevronRight, Activity, HelpCircle } from "lucide-react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet, adminGetFichier, declencherTelechargement } from "../shared/backofficeApiClient";
 import { formaterDureeMinutes } from "../shared/timeFormat";
@@ -115,7 +115,7 @@ function IncidentsHistoriquePage() {
 // le nouvel onglet "Incidents iTop" ci-dessous. ----
 function OngletAlertesReseau({ getAuthHeader, ministeres, sites }) {
   const [incidents, setIncidents] = useState([]);
-  const [stats, setStats] = useState({ total: 0, resolus: 0, enCours: 0, ko: 0, warn: 0, disponibilitePct: null, indisponibilitePct: null });
+  const [stats, setStats] = useState({ total: 0, resolus: 0, enCours: 0, ko: 0, warn: 0, inconnu: 0, disponibilitePct: null, indisponibilitePct: null });
   const [page, setPage] = useState(0); // 0-indexé côté API
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -205,6 +205,7 @@ function OngletAlertesReseau({ getAuthHeader, ministeres, sites }) {
   const pctResolus = stats.total > 0 ? Math.round((stats.resolus / stats.total) * 100) : 0;
   const pctKo = stats.total > 0 ? Math.round((stats.ko / stats.total) * 100) : 0;
   const pctWarn = stats.total > 0 ? Math.round((stats.warn / stats.total) * 100) : 0;
+  const pctInconnu = stats.total > 0 ? Math.round((stats.inconnu / stats.total) * 100) : 0;
 
   return (
     <>
@@ -281,6 +282,21 @@ function OngletAlertesReseau({ getAuthHeader, ministeres, sites }) {
                 <div className="eq-stat-bar-fill" style={{ width: `${pctWarn}%`, background: "var(--bo-warn)" }}></div>
               </div>
               <div className="eq-stat-pct">{pctWarn}%</div>
+            </div>
+          </div>
+          {/* Retour utilisateur du 30/10/2026 : il manquait la repartition
+              des alertes de statut Unknown - KO + WARN ne couvrait pas tout
+              "total" (un incident peut avoir un dernier statut connu
+              UNKNOWN, cf. IncidentHistoriqueStatsDto). */}
+          <div className="eq-stat-card" style={{ borderTop: "3px solid var(--bo-ink-muted)" }}>
+            <div className="eq-stat-icon"><HelpCircle size={20} /></div>
+            <div style={{ flex: 1 }}>
+              <div className="eq-stat-label">UNKNOWN</div>
+              <div className="eq-stat-value">{stats.inconnu.toLocaleString("fr-FR")}</div>
+              <div className="eq-stat-bar">
+                <div className="eq-stat-bar-fill" style={{ width: `${pctInconnu}%`, background: "var(--bo-ink-muted)" }}></div>
+              </div>
+              <div className="eq-stat-pct">{pctInconnu}%</div>
             </div>
           </div>
         </div>

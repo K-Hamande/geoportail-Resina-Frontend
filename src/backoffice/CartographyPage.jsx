@@ -49,6 +49,11 @@ function CartographyPage() {
   const [filtreVille, setFiltreVille] = useState("");
   const [filtreMinistere, setFiltreMinistere] = useState("");
   const [filtreStatut, setFiltreStatut] = useState(""); // "positionne" | "non_positionne" | ""
+  // Retour utilisateur du 30/10/2026 : meme filtre "avec equipement
+  // uniquement" que sur Gestion des sites (SitesPage.jsx) - certains
+  // sites importes n'ont pas encore d'equipement rattache (deux
+  // pipelines de synchronisation NetXMS independants).
+  const [avecEquipementUniquement, setAvecEquipementUniquement] = useState(false);
   const [recherche, setRecherche] = useState("");
   const [pageCourante, setPageCourante] = useState(1);
 
@@ -59,6 +64,17 @@ function CartographyPage() {
   const nomAdmin = (auth?.username || "admin").split(".")[0].toUpperCase();
   const initiales = nomAdmin.substring(0, 2);
 
+  // BUG CORRIGE (retour utilisateur du 30/10/2026) : "Actualiser"
+  // reinitialisait inconditionnellement les listes Province/Ville vers
+  // leurs versions NON filtrees, meme quand un filtre Region/Province
+  // etait actif - la liste deroulante Province affichait alors a nouveau
+  // TOUTES les provinces du pays au lieu de rester restreinte a la region
+  // selectionnee, sans que le filtre actif lui-meme ne change (incoherent
+  // a l'ecran, lisait comme "le filtrage ne se met pas a jour"). On ne
+  // retombe sur les listes completes que si aucun filtre Region/Province
+  // n'est actif ; sinon on reapplique la meme requete en cascade que
+  // onRegionChange/onProvinceChange pour rester coherent avec le filtre
+  // en cours.
   async function charger() {
     try {
       const [cartData, statsData] = await Promise.all([
@@ -67,8 +83,27 @@ function CartographyPage() {
       ]);
       setItems(cartData);
       setStats(statsData);
-      setProvinces(statsData.provinces || []);
-      setVilles(statsData.villes || []);
+
+      if (filtreProvince) {
+        const data = await adminGet(
+          `/backoffice/api/v1/equipments/cascade?niveau=villes&province=${encodeURIComponent(filtreProvince)}`,
+          getAuthHeader()
+        ).catch(() => []);
+        setVilles(data);
+        setProvinces(filtreRegion
+          ? await adminGet(`/backoffice/api/v1/equipments/cascade?niveau=provinces&region=${encodeURIComponent(filtreRegion)}`, getAuthHeader()).catch(() => [])
+          : statsData.provinces || []);
+      } else if (filtreRegion) {
+        const data = await adminGet(
+          `/backoffice/api/v1/equipments/cascade?niveau=provinces&region=${encodeURIComponent(filtreRegion)}`,
+          getAuthHeader()
+        ).catch(() => []);
+        setProvinces(data);
+        setVilles(statsData.villes || []);
+      } else {
+        setProvinces(statsData.provinces || []);
+        setVilles(statsData.villes || []);
+      }
     } catch (err) {
       setErreur(err.message);
     }
@@ -167,13 +202,14 @@ function CartographyPage() {
       if (filtreMinistere && item.ministere !== filtreMinistere) return false;
       if (filtreStatut === "positionne" && !item.positionne) return false;
       if (filtreStatut === "non_positionne" && item.positionne) return false;
+      if (avecEquipementUniquement && (item.nombreEquipements ?? 0) === 0) return false;
       if (recherche) {
         const t = recherche.trim().toLowerCase();
         return item.nom.toLowerCase().includes(t) || (item.ville || "").toLowerCase().includes(t);
       }
       return true;
     });
-  }, [items, filtreRegion, filtreProvince, filtreVille, filtreMinistere, filtreStatut, recherche]);
+  }, [items, filtreRegion, filtreProvince, filtreVille, filtreMinistere, filtreStatut, avecEquipementUniquement, recherche]);
 
   // Stats positionnement
   const nbPositionnes = items.filter((i) => i.positionne).length;
@@ -191,7 +227,7 @@ function CartographyPage() {
     ? [brouillon.latitude, brouillon.longitude]
     : CENTRE_BURKINA_FASO;
 
-  const aDesFiltres = filtreRegion || filtreProvince || filtreVille || filtreMinistere || filtreStatut || recherche;
+  const aDesFiltres = filtreRegion || filtreProvince || filtreVille || filtreMinistere || filtreStatut || avecEquipementUniquement || recherche;
 
   return (
     <>
@@ -389,11 +425,20 @@ function CartographyPage() {
                 ))}
               </div>
 
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", marginBottom: "8px" }}>
+                <input
+                  type="checkbox"
+                  checked={avecEquipementUniquement}
+                  onChange={(e) => { setAvecEquipementUniquement(e.target.checked); setPageCourante(1); }}
+                />
+                Avec équipement uniquement
+              </label>
+
               {aDesFiltres && (
                 <button className="btn-outline" style={{ width: "100%", fontSize: "11px" }}
                   onClick={() => {
                     setFiltreRegion(""); setFiltreProvince(""); setFiltreVille("");
-                    setFiltreMinistere(""); setFiltreStatut(""); setRecherche("");
+                    setFiltreMinistere(""); setFiltreStatut(""); setAvecEquipementUniquement(false); setRecherche("");
                     setProvinces(stats?.provinces || []); setVilles(stats?.villes || []);
                     setPageCourante(1);
                   }}><X size={12} /> Effacer les filtres</button>
