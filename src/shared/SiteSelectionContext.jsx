@@ -29,18 +29,37 @@ export function SiteSelectionProvider({ children }) {
   const [sites, setSites] = useState([]);
   const [mapSites, setMapSites] = useState([]);
   const [siteId, setSiteIdState] = useState(null);
+  // BUG CORRIGE : un echec de /api/v1/sites etait jusque-la avale en
+  // silence (.catch(() => {})) - siteId restait alors indefiniment null,
+  // et chaque page decideur qui attend siteId pour charger ses propres
+  // donnees (ex: MonSitePage.chargerStatuts : "if (!siteId) return;")
+  // ne demarrait jamais son propre chargement NI son propre etat
+  // d'erreur - l'utilisateur restait bloque sur le Preloader de la carte
+  // (celle-ci affiche un Preloader tant que ses donnees sont null), sans
+  // aucun message. erreurSites est maintenant expose pour que
+  // DecideurLayout puisse afficher une vraie erreur + un bouton Reessayer.
+  const [erreurSites, setErreurSites] = useState(null);
+  const [chargementSites, setChargementSites] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  function chargerSites() {
+    setChargementSites(true);
     apiGet("/api/v1/sites")
       .then((data) => {
         setSites(data);
+        setErreurSites(null);
         const siteMemorise = sessionStorage.getItem(CLE_SITE_SELECTIONNE);
         const siteMemoriseValide = data.some((site) => site.siteId === siteMemorise);
         if (siteMemoriseValide) setSiteIdState(siteMemorise);
         else if (data.length > 0) setSiteIdState(data[0].siteId);
       })
-      .catch(() => {});
+      .catch((err) => setErreurSites(err.message))
+      .finally(() => setChargementSites(false));
+  }
+
+  useEffect(() => {
+    chargerSites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -71,7 +90,10 @@ export function SiteSelectionProvider({ children }) {
 
   return (
     <SiteSelectionContext.Provider
-      value={{ sites, mapSites, siteId, choisirSite, definirSiteSansNaviguer, setSiteIdState }}
+      value={{
+        sites, mapSites, siteId, choisirSite, definirSiteSansNaviguer, setSiteIdState,
+        erreurSites, chargementSites, rechargerSites: chargerSites,
+      }}
     >
       {children}
     </SiteSelectionContext.Provider>
