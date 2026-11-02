@@ -177,7 +177,13 @@ function SitesPage() {
         <button className="topbar-collapse-btn" onClick={() => setReduit(!reduit)} aria-label="Basculer la barre latérale"><Menu size={18} /></button>
         <div className="topbar-titles">
           <h1 className="topbar-title-welcome">Gestion des sites</h1>
-          <p className="topbar-subtitle">{sites.length} sites configurés sur le réseau RESINA</p>
+          {/* Tableau de suivi des amendements (item #1, "Partiel" -
+              appliquer la correction a toutes les pages backoffice) : le
+              compteur en-tete comptait TOUS les sites importes, equipement
+              ou non, et pouvait donc depasser le nombre total d'equipements
+              - meme bug que l'ancien KPI "SITES CONFIGURES" du tableau de
+              bord (deja corrige), applique ici au sous-titre de cette page. */}
+          <p className="topbar-subtitle">{sites.length - sitesSansEquipement} sites configurés sur le réseau RESINA</p>
         </div>
         <div className="topbar-actions">
           <div className="topbar-live-badge-compact">

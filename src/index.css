@@ -1410,6 +1410,31 @@ body {
 }
 .feq-chip svg { color: var(--color-primary); flex-shrink: 0; }
 
+/* Bloc "Equipement principal de l'etage" (tableau de suivi des
+   amendements, items #16/#17) - toujours visible, pas besoin de cliquer,
+   a la difference des equipements secondaires (simples lignes de statut
+   compact juste au-dessus, non cliquables). */
+.floor-equipment-principal {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(10, 61, 122, 0.08);
+  padding: 10px 12px 12px;
+  margin-top: 4px;
+}
+.floor-equipment-principal-titre {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted);
+}
+.floor-equipment-principal-nom { font-weight: 700; margin: 2px 0 8px; }
+.floor-equipment-principal .floor-equipment-details {
+  margin: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
 @media (min-width: 1024px) {
   /* Bascule : on cache la barre basse mobile, on affiche la version
      integree au bandeau bleu a la place. */

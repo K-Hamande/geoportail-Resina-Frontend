@@ -74,10 +74,6 @@ function ContactDsiPanel(props) {
 
 function LanStatusCard({ data }) {
   const [etagesOuverts, setEtagesOuverts] = useState(new Set());
-  // Section IV du compte rendu des amendements : consulter les
-  // informations detaillees de CHAQUE equipement d'un etage, pas
-  // seulement le resume (statut/nom/type) deja affiche.
-  const [equipementsOuverts, setEquipementsOuverts] = useState(new Set());
 
   if (!data) {
     return <div className="status-card"><Preloader /></div>;
@@ -88,15 +84,6 @@ function LanStatusCard({ data }) {
       const suivant = new Set(prev);
       if (suivant.has(nom)) suivant.delete(nom);
       else suivant.add(nom);
-      return suivant;
-    });
-  }
-
-  function basculerEquipement(id) {
-    setEquipementsOuverts((prev) => {
-      const suivant = new Set(prev);
-      if (suivant.has(id)) suivant.delete(id);
-      else suivant.add(id);
       return suivant;
     });
   }
@@ -184,47 +171,52 @@ function LanStatusCard({ data }) {
 
                 {ouvert && (
                   <div className="floor-equipment-list" onClick={ignorerClicParent}>
+                    {/* Tableau de suivi des amendements (items #16/#17) :
+                        seul l'equipement PRINCIPAL de l'etage affiche ses
+                        informations detaillees - les equipements secondaires
+                        n'apparaissent que sous forme de statut compact
+                        ci-dessous, sans etre cliquables individuellement. */}
                     {etage.equipements.map((eq) => {
-                      const aDesDetails = [eq.vendor, eq.emplacement, eq.trafficEntrant, eq.trafficSortant]
-                        .some(estValeurUtile);
-                      const equipementOuvert = equipementsOuverts.has(eq.id);
                       const TypeIcone = TYPE_ICONS[eq.type] ?? Router;
                       return (
-                        <div key={eq.id} className="floor-equipment-wrap">
-                          <div
-                            className={`floor-equipment-item ${aDesDetails ? "floor-equipment-cliquable" : ""}`}
-                            onClick={aDesDetails ? () => basculerEquipement(eq.id) : undefined}
-                          >
-                            <span className={`floor-equipment-icon ${classFor(eq.status)}`}>
-                              <TypeIcone size={16} />
-                            </span>
-                            <span className="floor-equipment-infos">
-                              <span className="floor-equipment-name">{eq.libelleAffiche}</span>
-                              <span className="floor-equipment-type">{TYPE_LABELS[eq.type] ?? eq.type}</span>
-                            </span>
-                            {aDesDetails && (
-                              <ChevronDown size={15} className={`floor-equipment-chevron ${equipementOuvert ? "expanded" : ""}`} />
-                            )}
-                          </div>
-                          {equipementOuvert && aDesDetails && (
-                            <div className="floor-equipment-details">
-                              {estValeurUtile(eq.vendor) && (
-                                <span className="feq-chip" title="Fabricant"><Factory size={14} /> {eq.vendor}</span>
-                              )}
-                              {estValeurUtile(eq.emplacement) && (
-                                <span className="feq-chip" title="Emplacement"><MapPin size={14} /> {eq.emplacement}</span>
-                              )}
-                              {estValeurUtile(eq.trafficEntrant) && (
-                                <span className="feq-chip" title="Trafic entrant"><ArrowDownToLine size={14} /> {eq.trafficEntrant}</span>
-                              )}
-                              {estValeurUtile(eq.trafficSortant) && (
-                                <span className="feq-chip" title="Trafic sortant"><ArrowUpFromLine size={14} /> {eq.trafficSortant}</span>
-                              )}
-                            </div>
-                          )}
+                        <div key={eq.id} className="floor-equipment-item">
+                          <span className={`floor-equipment-icon ${classFor(eq.status)}`}>
+                            <TypeIcone size={16} />
+                          </span>
+                          <span className="floor-equipment-infos">
+                            <span className="floor-equipment-name">{eq.libelleAffiche}</span>
+                            <span className="floor-equipment-type">{TYPE_LABELS[eq.type] ?? eq.type}</span>
+                          </span>
                         </div>
                       );
                     })}
+
+                    {etage.equipementPrincipal && (() => {
+                      const principal = etage.equipementPrincipal;
+                      const aDesDetails = [principal.vendor, principal.emplacement, principal.trafficEntrant, principal.trafficSortant]
+                        .some(estValeurUtile);
+                      if (!aDesDetails) return null;
+                      return (
+                        <div className="floor-equipment-principal">
+                          <div className="floor-equipment-principal-titre">Équipement principal de l'étage</div>
+                          <div className="floor-equipment-principal-nom">{principal.libelleAffiche}</div>
+                          <div className="floor-equipment-details">
+                            {estValeurUtile(principal.vendor) && (
+                              <span className="feq-chip" title="Fabricant"><Factory size={14} /> {principal.vendor}</span>
+                            )}
+                            {estValeurUtile(principal.emplacement) && (
+                              <span className="feq-chip" title="Emplacement"><MapPin size={14} /> {principal.emplacement}</span>
+                            )}
+                            {estValeurUtile(principal.trafficEntrant) && (
+                              <span className="feq-chip" title="Trafic entrant"><ArrowDownToLine size={14} /> {principal.trafficEntrant}</span>
+                            )}
+                            {estValeurUtile(principal.trafficSortant) && (
+                              <span className="feq-chip" title="Trafic sortant"><ArrowUpFromLine size={14} /> {principal.trafficSortant}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

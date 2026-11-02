@@ -45,6 +45,15 @@ function numerosPagesAffiches(pageAffichee, totalPages) {
   return pages;
 }
 
+// Tableau de suivi des amendements (item #23) : niveau de criticite d'un
+// incident, avec le libelle metier valide (section VIII.1 - "Moyen", pas
+// "Mineur") plutot que le statut technique brut KO/WARN affiche dans la
+// colonne STATUT a cote. Pas de niveau "Majeur" distinct ici : KO/WARN
+// restent les 2 seuls niveaux portes par IncidentHistorique.statut.
+function libelleCriticite(statut) {
+  return statut === "KO" ? "Critique" : "Moyen";
+}
+
 function infosStatutItop(statut) {
   if (statut === "ongoing") return { classe: "pill-ko", libelle: "En cours" };
   if (statut === "resolved") return { classe: "pill-warn", libelle: "Résolu" };
@@ -58,6 +67,15 @@ function IncidentsHistoriquePage() {
   const [ministeres, setMinisteres] = useState([]);
   useEffect(() => {
     adminGet("/backoffice/api/v1/ministry-tokens/ministeres", getAuthHeader()).then(setMinisteres).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Tableau de suivi des amendements (items #19/#22) : liste des sites
+  // pour le filtre dedie "Site" (onglet Alertes reseau uniquement - les
+  // tickets iTop n'ont pas de site precis rattache, cf. ItopClient).
+  const [sites, setSites] = useState([]);
+  useEffect(() => {
+    adminGet("/backoffice/api/v1/sites", getAuthHeader()).then(setSites).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -85,7 +103,7 @@ function IncidentsHistoriquePage() {
           </button>
         </div>
 
-        {onglet === "reseau" && <OngletAlertesReseau getAuthHeader={getAuthHeader} ministeres={ministeres} />}
+        {onglet === "reseau" && <OngletAlertesReseau getAuthHeader={getAuthHeader} ministeres={ministeres} sites={sites} />}
         {onglet === "itop" && <OngletIncidentsItop getAuthHeader={getAuthHeader} ministeres={ministeres} />}
       </div>
     </>
@@ -95,7 +113,7 @@ function IncidentsHistoriquePage() {
 // ---- Onglet "Alertes réseau" (NetXMS) - contenu original de cette page,
 // inchangé, juste extrait dans son propre composant pour cohabiter avec
 // le nouvel onglet "Incidents iTop" ci-dessous. ----
-function OngletAlertesReseau({ getAuthHeader, ministeres }) {
+function OngletAlertesReseau({ getAuthHeader, ministeres, sites }) {
   const [incidents, setIncidents] = useState([]);
   const [stats, setStats] = useState({ total: 0, resolus: 0, enCours: 0, ko: 0, warn: 0, disponibilitePct: null, indisponibilitePct: null });
   const [page, setPage] = useState(0); // 0-indexé côté API
@@ -107,6 +125,7 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
 
   const [periode, setPeriode] = useState(30);
   const [date, setDate] = useState("");
+  const [siteId, setSiteId] = useState("");
   const [type, setType] = useState("");
   const [etat, setEtat] = useState("");
   const [ministere, setMinistere] = useState("");
@@ -120,6 +139,7 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
     } else {
       params.set("jours", periode);
     }
+    if (siteId) params.set("siteId", siteId);
     if (type) params.set("type", type);
     if (etat) params.set("etat", etat);
     if (ministere) params.set("ministere", ministere);
@@ -156,10 +176,11 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
       .finally(() => setExportEnCours(false));
   }
 
-  useEffect(() => { charger(); }, [periode, date, type, etat, ministere, recherche, page]);
+  useEffect(() => { charger(); }, [periode, date, siteId, type, etat, ministere, recherche, page]);
 
   function onChangePeriode(valeur) { setPage(0); setPeriode(valeur); }
   function onChangeDate(valeur) { setPage(0); setDate(valeur); }
+  function onChangeSite(valeur) { setPage(0); setSiteId(valeur); }
   function onChangeType(valeur) { setPage(0); setType(valeur); }
   function onChangeEtat(valeur) { setPage(0); setEtat(valeur); }
   function onChangeMinistere(valeur) { setPage(0); setMinistere(valeur); }
@@ -171,12 +192,13 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
   }
 
   function effacerFiltres() {
-    setPeriode(30); setDate(""); setType(""); setEtat(""); setMinistere("");
+    setPeriode(30); setDate(""); setSiteId(""); setType(""); setEtat(""); setMinistere("");
     setRecherche(""); setRechercheSaisie("");
     setPage(0);
   }
 
-  const aDesFiltres = date || type || etat || ministere || recherche || periode !== 30;
+  const aDesFiltres = date || siteId || type || etat || ministere || recherche || periode !== 30;
+  const sitesTries = [...sites].sort((a, b) => a.nom.localeCompare(b.nom));
   const pageAffichee = page + 1; // 1-indexé pour l'utilisateur
 
   const pctEnCours = stats.total > 0 ? Math.round((stats.enCours / stats.total) * 100) : 0;
@@ -283,6 +305,17 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
                 onChange={(e) => onChangeDate(e.target.value)} />
             </div>
 
+            {/* Tableau de suivi des amendements (items #19/#22) : filtre
+                EXACT par site - distinct de la recherche texte libre
+                "Site ou ville" plus bas, qui cherche une sous-chaine. */}
+            <div className="cascade-group">
+              <label className="cascade-label">Site</label>
+              <SearchableSelect selectClassName="attention-search" value={siteId} onChange={(e) => onChangeSite(e.target.value)}>
+                <option value="">Tous les sites</option>
+                {sitesTries.map((s) => <option key={s.siteId} value={s.siteId}>{s.nom}</option>)}
+              </SearchableSelect>
+            </div>
+
             <div className="cascade-group">
               <label className="cascade-label">Type</label>
               <SearchableSelect selectClassName="attention-search" value={type} onChange={(e) => onChangeType(e.target.value)}>
@@ -358,6 +391,7 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
                   <th>MINISTÈRE</th>
                   <th>TYPE</th>
                   <th>STATUT</th>
+                  <th>CRITICITÉ</th>
                   <th>DATE D'INCIDENT</th>
                   <th>FIN</th>
                   <th>DURÉE</th>
@@ -375,6 +409,11 @@ function OngletAlertesReseau({ getAuthHeader, ministeres }) {
                     <td>
                       <span className={`status-pill ${incident.statut === "KO" ? "pill-ko" : "pill-warn"}`}>
                         {incident.statut}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-pill ${incident.statut === "KO" ? "pill-ko" : "pill-warn"}`}>
+                        {libelleCriticite(incident.statut)}
                       </span>
                     </td>
                     <td className="alerte-cell">{formaterDateHeure(incident.debutLe)}</td>

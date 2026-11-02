@@ -112,7 +112,13 @@ function DashboardPage() {
   const pctInconnu = total > 0 ? ((inconnu / total) * 100).toFixed(1) : "0";
   const pctActifs = total > 0 ? ((actifs / total) * 100).toFixed(1) : "0";
 
-  const enAnomalie = sites.filter((s) => s.statutGlobal === "WARN" || s.statutGlobal === "KO");
+  // Tableau de suivi des amendements (item #10) : l'espace alertes ne
+  // presente desormais que les alertes CRITIQUES (statut KO) - les sites
+  // WARN (degrade) n'y apparaissent plus. Le detail WARN reste visible
+  // ailleurs sur ce tableau de bord (anneau de sante, panneau de gravite
+  // des equipements), qui restent des vues d'ensemble et non un espace
+  // "alertes" a proprement parler.
+  const enAnomalie = sites.filter((s) => s.statutGlobal === "KO");
   const statutInconnu = sites.filter((s) => s.statutGlobal === "UNKNOWN");
   const sitesAttentionActifs = ongletAttention === "inconnu" ? statutInconnu : enAnomalie;
   const anomalieFiltree = sitesAttentionActifs.filter((s) => {
@@ -284,7 +290,7 @@ function DashboardPage() {
               <div className="gravite-card gravite-intermediaire">
                 <div className="gravite-icon"><ShieldAlert size={18} /></div>
                 <div className="gravite-value">{gravite.intermediaire}</div>
-                <div className="gravite-label">Intermédiaire</div>
+                <div className="gravite-label">Moyen</div>
               </div>
               <div className="gravite-card gravite-majeur">
                 <div className="gravite-icon"><TriangleAlert size={18} /></div>
@@ -404,7 +410,7 @@ function DashboardPage() {
               className={`attention-tab ${ongletAttention === "anomalies" ? "attention-tab-actif" : ""}`}
               onClick={() => setOngletAttention("anomalies")}
             >
-              Dégradés / Hors service <span className="attention-tab-count">{enAnomalie.length}</span>
+              Critiques (hors service) <span className="attention-tab-count">{enAnomalie.length}</span>
             </button>
             <button
               className={`attention-tab ${ongletAttention === "inconnu" ? "attention-tab-actif" : ""}`}
