@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { Menu, Building2, X, Pencil, RefreshCw, Pause, Play, ChevronLeft, ChevronRight, Circle, Upload } from "lucide-react";
+import { Menu, Building2, X, Pencil, RefreshCw, Pause, Play, ChevronLeft, ChevronRight, Circle, Download, ChevronDown, FileSpreadsheet, FileText } from "lucide-react";
 import { useAuth } from "../shared/AuthContext";
-import { adminGet, adminPost, adminPostFichier } from "../shared/backofficeApiClient";
+import { adminGet, adminPost, adminGetFichier, declencherTelechargement } from "../shared/backofficeApiClient";
 import SearchableSelect from "../shared/SearchableSelect";
 import ErrorBanner from "../shared/ErrorBanner";
 import Preloader from "../shared/Preloader";
@@ -27,9 +27,23 @@ function SitesPage() {
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [derniereMaj, setDerniereMaj] = useState(new Date());
-  const [importEnCours, setImportEnCours] = useState(false);
-  const [resultatImport, setResultatImport] = useState(null);
-  const inputFichierRef = useRef(null);
+  // Amendement "Tableau de bord et gestion des sites" : le bouton
+  // "Importer (CSV)" est retire et remplace par "Exporter" (Excel/PDF) -
+  // voir exporter() plus bas.
+  const [menuExportOuvert, setMenuExportOuvert] = useState(false);
+  const [exportEnCours, setExportEnCours] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuExportOuvert) return;
+    function onClicExterieur(e) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setMenuExportOuvert(false);
+      }
+    }
+    document.addEventListener("mousedown", onClicExterieur);
+    return () => document.removeEventListener("mousedown", onClicExterieur);
+  }, [menuExportOuvert]);
 
   function charger() {
     setChargement(true);
@@ -59,32 +73,6 @@ function SitesPage() {
       charger();
     } catch (err) {
       setErreur(err.message);
-    }
-  }
-
-  // Import CSV de sites (section VI du compte rendu des amendements),
-  // en complement de l'import NetXMS - utile pour des sites pas encore
-  // remontes par NetXMS, ou pour corriger/completer en masse.
-  function choisirFichierCsv() {
-    inputFichierRef.current?.click();
-  }
-
-  async function importerFichierCsv(e) {
-    const fichier = e.target.files?.[0];
-    e.target.value = ""; // permet de re-selectionner le meme fichier ensuite
-    if (!fichier) return;
-
-    setImportEnCours(true);
-    setResultatImport(null);
-    setErreur(null);
-    try {
-      const resultat = await adminPostFichier("/backoffice/api/v1/sites/import-csv", getAuthHeader(), fichier);
-      setResultatImport(resultat);
-      charger();
-    } catch (err) {
-      setErreur(err.message);
-    } finally {
-      setImportEnCours(false);
     }
   }
 
@@ -145,6 +133,28 @@ function SitesPage() {
   });
 
   const sitesSansEquipement = sites.filter((s) => (s.nombreEquipements ?? 0) === 0).length;
+
+  // Amendement "Tableau de bord et gestion des sites" : l'export doit
+  // "prendre en compte les filtres et criteres de recherche appliques a
+  // la liste" - on envoie donc au backend les siteId DEJA FILTRES cote
+  // frontend (sitesFiltres), plutot que de dupliquer la logique de
+  // filtrage cote serveur. "Ce que vous voyez est ce que vous exportez".
+  async function exporter(format) {
+    setMenuExportOuvert(false);
+    setExportEnCours(true);
+    setErreur(null);
+    try {
+      const siteIds = sitesFiltres.map((s) => s.siteId).join(",");
+      const params = new URLSearchParams({ format, siteIds });
+      const { blob, nomFichier } = await adminGetFichier(
+        `/backoffice/api/v1/sites/export?${params.toString()}`, getAuthHeader());
+      declencherTelechargement(blob, nomFichier);
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setExportEnCours(false);
+    }
+  }
 
   const totalPages = Math.max(1, Math.ceil(sitesFiltres.length / TAILLE_PAGE));
   const pageActuelle = Math.min(pageCourante, totalPages);
@@ -207,26 +217,6 @@ function SitesPage() {
       <div className="backoffice-content dashboard-content">
         <ErrorBanner message={erreur} onRetry={charger} />
 
-        {resultatImport && (
-          <div className={`panel import-resultat-panel ${resultatImport.erreurs.length > 0 ? "import-resultat-avec-erreurs" : ""}`}>
-            <div className="panel-header">
-              <h2>Résultat de l'import CSV</h2>
-              <button className="btn-outline" onClick={() => setResultatImport(null)}><X size={13} /> Fermer</button>
-            </div>
-            <p>
-              {resultatImport.lignesTraitees} ligne(s) traitée(s) — {resultatImport.crees} créé(s), {resultatImport.modifies} modifié(s)
-              {resultatImport.erreurs.length > 0 && `, ${resultatImport.erreurs.length} erreur(s)`}
-            </p>
-            {resultatImport.erreurs.length > 0 && (
-              <ul className="import-resultat-erreurs">
-                {resultatImport.erreurs.map((e, idx) => (
-                  <li key={idx}>Ligne {e.ligne} : {e.message}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
         <div className="panel attention-panel">
           <div className="panel-header" style={{ flexWrap: "wrap", gap: "8px" }}>
             <h2><Building2 size={16} className="panel-title-icon" /> Sites configurés <span className="attention-count" style={{ background: "var(--bo-primary)" }}>{sitesFiltres.length}</span></h2>
@@ -286,20 +276,25 @@ function SitesPage() {
                 <button className="btn-outline" onClick={effacerFiltres}><X size={13} /> Effacer les filtres</button>
               )}
 
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                ref={inputFichierRef}
-                style={{ display: "none" }}
-                onChange={importerFichierCsv}
-              />
-              <button
-                className="btn-outline"
-                onClick={choisirFichierCsv}
-                disabled={importEnCours}
-              >
-                <Upload size={13} /> {importEnCours ? "Import en cours…" : "Importer (CSV)"}
-              </button>
+              <div className="export-menu-wrap" ref={exportMenuRef}>
+                <button
+                  className="btn-outline"
+                  onClick={() => setMenuExportOuvert((v) => !v)}
+                  disabled={exportEnCours}
+                >
+                  <Download size={13} /> {exportEnCours ? "Export en cours…" : "Exporter"} <ChevronDown size={13} />
+                </button>
+                {menuExportOuvert && (
+                  <div className="export-menu">
+                    <button type="button" onClick={() => exporter("xlsx")}>
+                      <FileSpreadsheet size={14} /> Excel (.xlsx)
+                    </button>
+                    <button type="button" onClick={() => exporter("pdf")}>
+                      <FileText size={14} /> PDF
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

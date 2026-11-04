@@ -1,13 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation, useOutletContext } from "react-router-dom";
 import {
-  Menu, Sparkle, Bell, Building2, Check, TriangleAlert, X, Plug,
+  Menu, Sparkle, Bell, Building2, Check, TriangleAlert, Plug,
   Activity, Download, RefreshCw, Eye, Trophy, ThumbsUp, Siren, Circle,
   HelpCircle, ShieldAlert, AlertOctagon, Gauge, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../shared/AuthContext";
 import { adminGet } from "../shared/backofficeApiClient";
 import ErrorBanner from "../shared/ErrorBanner";
+
+// Amendement "Tableau de bord et gestion des sites" : 5 categories de
+// sites mutuellement exclusives, en remplacement de la notion generique
+// "Sites degrades". cle = valeur de SiteGravite cote backend
+// (site.graviteSite, deja calcule par SiteStatusSnapshotService a partir
+// du pire code NetXMS du site). classeIcone reutilise les memes couleurs
+// que le panneau "Equipements par niveau de gravite" pour rester coherent
+// visuellement sur la meme page.
+const CATEGORIES_GRAVITE = [
+  { cle: "CRITIQUE", libelle: "Sites critiques", Icone: AlertOctagon, classeIcone: "kpi-icon-red", classeValeur: "kpi-value-red" },
+  { cle: "MAJEUR", libelle: "Sites majeurs", Icone: TriangleAlert, classeIcone: "kpi-icon-majeur", classeValeur: "kpi-value-majeur" },
+  { cle: "MOYEN", libelle: "Sites moyens", Icone: ShieldAlert, classeIcone: "kpi-icon-orange", classeValeur: "kpi-value-orange" },
+  { cle: "NORMAL", libelle: "Sites normaux", Icone: Check, classeIcone: "kpi-icon-green", classeValeur: "kpi-value-green" },
+  { cle: "INCONNU", libelle: "Sites inconnus", Icone: HelpCircle, classeIcone: "kpi-icon-grey", classeValeur: "kpi-value-grey" },
+];
 
 // Pastille de statut reutilisee pour STATUT ANPTIC / RESEAU LOCAL (LAN) -
 // gere explicitement UNKNOWN (section II du compte rendu des amendements :
@@ -38,10 +53,11 @@ function DashboardPage() {
   const [chargement, setChargement] = useState(true);
   const [derniereMaj, setDerniereMaj] = useState(new Date());
   const [rechercheAnomalie, setRechercheAnomalie] = useState("");
-  // Section II du compte rendu des amendements : onglet dedie aux sites
-  // de statut "Inconnu", distinct des sites degrades/hors service -
-  // jusqu'ici ces sites etaient simplement absents de ce panneau.
-  const [ongletAttention, setOngletAttention] = useState("anomalies");
+  // Amendement "Tableau de bord et gestion des sites" : categorie de
+  // gravite active (Critique/Majeur/Moyen/Normal/Inconnu) - remplace
+  // l'ancien systeme a 2 onglets (Degrades/Hors service vs Statut
+  // inconnu). Defaut sur "CRITIQUE", la categorie la plus urgente.
+  const [categorieActive, setCategorieActive] = useState("CRITIQUE");
   // Panneau "Sante globale" masque par defaut, depliable au clic.
   const [santeDepliee, setSanteDepliee] = useState(false);
 
@@ -64,6 +80,7 @@ function DashboardPage() {
         statutGlobal: statutBySiteId[site.siteId]?.statutGlobal ?? null,
         statutAnptic: statutBySiteId[site.siteId]?.statutAnptic ?? null,
         statutLan: statutBySiteId[site.siteId]?.statutLan ?? null,
+        graviteSite: statutBySiteId[site.siteId]?.graviteSite ?? "INCONNU",
       }));
 
       // BUG CORRIGE (compte rendu des amendements, section I) : le KPI
@@ -76,8 +93,8 @@ function DashboardPage() {
       // ce qui n'a pas de sens pour un reseau ou chaque site supervise a
       // par definition au moins un equipement. On ne retient ici que les
       // sites avec au moins un equipement - tous les KPI de cette page
-      // (total, actifs, OK/WARN/KO, anneau de sante, sites en anomalie)
-      // derivent de ce meme ensemble filtre, pour rester coherents entre eux.
+      // (total, actifs, categories de gravite, anneau de sante) derivent
+      // de ce meme ensemble filtre, pour rester coherents entre eux.
       const sitesAvecEquipement = merged.filter((site) => (site.nombreEquipements ?? 0) > 0);
 
       setSites(sitesAvecEquipement);
@@ -101,31 +118,29 @@ function DashboardPage() {
   const ok = sites.filter((s) => s.statutGlobal === "OK").length;
   const warn = sites.filter((s) => s.statutGlobal === "WARN").length;
   const ko = sites.filter((s) => s.statutGlobal === "KO").length;
-  const inconnu = sites.filter((s) => s.statutGlobal === "UNKNOWN").length;
 
   const pctOk = actifs > 0 ? ((ok / actifs) * 100).toFixed(1) : "0";
   const pctWarn = actifs > 0 ? ((warn / actifs) * 100).toFixed(1) : "0";
   const pctKo = actifs > 0 ? ((ko / actifs) * 100).toFixed(1) : "0";
-  // A la difference de pctOk/pctWarn/pctKo (rapportes aux sites actifs),
-  // "Statut inconnu" se rapporte a l'ensemble des sites configures - un
-  // site peut etre injoignable (zone d'insecurite) qu'il soit actif ou non.
-  const pctInconnu = total > 0 ? ((inconnu / total) * 100).toFixed(1) : "0";
   const pctActifs = total > 0 ? ((actifs / total) * 100).toFixed(1) : "0";
 
-  // Tableau de suivi des amendements (item #10) : l'espace alertes ne
-  // presente desormais que les alertes CRITIQUES (statut KO) - les sites
-  // WARN (degrade) n'y apparaissent plus. Le detail WARN reste visible
-  // ailleurs sur ce tableau de bord (anneau de sante, panneau de gravite
-  // des equipements), qui restent des vues d'ensemble et non un espace
-  // "alertes" a proprement parler.
-  const enAnomalie = sites.filter((s) => s.statutGlobal === "KO");
-  const statutInconnu = sites.filter((s) => s.statutGlobal === "UNKNOWN");
-  const sitesAttentionActifs = ongletAttention === "inconnu" ? statutInconnu : enAnomalie;
-  const anomalieFiltree = sitesAttentionActifs.filter((s) => {
+  // Amendement "Tableau de bord et gestion des sites" : 5 categories de
+  // sites mutuellement exclusives (chaque site n'apparait que dans UNE
+  // seule), calculees cote backend (site.graviteSite). Remplace l'ancien
+  // panneau "Sites necessitant une attention" (Critiques/Statut inconnu).
+  const sitesParCategorie = Object.fromEntries(
+    CATEGORIES_GRAVITE.map((cat) => [cat.cle, sites.filter((s) => s.graviteSite === cat.cle)])
+  );
+  const categorieInfoActive = CATEGORIES_GRAVITE.find((c) => c.cle === categorieActive);
+  const sitesCategorieActive = sitesParCategorie[categorieActive] ?? [];
+  const sitesCategorieFiltree = sitesCategorieActive.filter((s) => {
     const t = rechercheAnomalie.trim().toLowerCase();
     if (!t) return true;
     return s.nom.toLowerCase().includes(t) || (s.ville || "").toLowerCase().includes(t);
   });
+  // Badge de la cloche (alertes) : sites critiques + majeurs, les deux
+  // niveaux necessitant reellement une intervention.
+  const nombreAlertesUrgentes = sitesParCategorie.CRITIQUE.length + sitesParCategorie.MAJEUR.length;
 
   const nomAdmin = (auth?.username || "admin").split(".")[0].toUpperCase();
   const initiales = nomAdmin.substring(0, 2);
@@ -162,9 +177,11 @@ function DashboardPage() {
   }
 
   function exporterCSV() {
-    const enTete = ["Site", "Ville", "Statut ANPTIC", "Statut LAN", "Dernière alerte"];
-    const lignes = enAnomalie.map((s) => [
+    const enTete = ["Site", "Ville", "Categorie", "Statut ANPTIC", "Statut LAN", "Derniere alerte"];
+    const libelleCategorie = categorieInfoActive?.libelle ?? categorieActive;
+    const lignes = sitesCategorieActive.map((s) => [
       s.nom, s.ville || "",
+      libelleCategorie,
       s.statutAnptic || "Inconnu",
       s.statutLan || "Inconnu",
       heureMaj,
@@ -172,11 +189,11 @@ function DashboardPage() {
     const csv = [enTete, ...lignes]
       .map((ligne) => ligne.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
       .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `sites-en-anomalie-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `sites-${categorieActive.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -200,9 +217,9 @@ function DashboardPage() {
           <button className="topbar-icon-btn" title="Alertes — voir l'historique des incidents"
             onClick={() => irOuRemonterEnHaut("/backoffice/incidents-historique")}>
             <Bell size={17} />
-            {enAnomalie.length > 0 && (
+            {nombreAlertesUrgentes > 0 && (
               <span className="topbar-badge topbar-badge-orange">
-                {enAnomalie.length > 99 ? "99+" : enAnomalie.length}
+                {nombreAlertesUrgentes > 99 ? "99+" : nombreAlertesUrgentes}
               </span>
             )}
           </button>
@@ -222,7 +239,11 @@ function DashboardPage() {
       <div className="backoffice-content dashboard-content">
         <ErrorBanner message={erreur} onRetry={charger} />
 
-        {/* KPI */}
+        {/* KPI - amendement "Tableau de bord et gestion des sites" :
+            5 categories de gravite cliquables (Critique/Majeur/Moyen/
+            Normal/Inconnu), en remplacement de la notion generique
+            "Sites degrades". Chaque carte filtre le panneau de liste
+            ci-dessous au clic. */}
         <div className="kpi-grid-v2">
           <div className="kpi-card-v2">
             <div className="kpi-card-icon kpi-icon-blue"><Building2 size={22} /></div>
@@ -232,45 +253,29 @@ function DashboardPage() {
               <div className="kpi-card-sub">{pctActifs}% actifs · avec équipement</div>
             </div>
           </div>
-          <div className="kpi-card-v2">
-            <div className="kpi-card-icon kpi-icon-green"><Check size={22} /></div>
-            <div>
-              <div className="kpi-card-label">SITES OPÉRATIONNELS</div>
-              <div className="kpi-card-value kpi-value-green">{ok}</div>
-              <div className="kpi-card-sub">{pctOk}% du parc</div>
-            </div>
-          </div>
-          {/* BUG CORRIGE (retour utilisateur du 30/10/2026) : le total
-              "SITES CONFIGURES" ne correspondait plus a la somme des autres
-              cartes (operationnels + inconnu + hors service) depuis le
-              retrait de cette carte "degrades" (remplacee a une etape
-              precedente par "Statut inconnu"). Remise en place pour que le
-              total s'additionne correctement : total = ok + degrades (WARN)
-              + inconnu + hors service. */}
-          <div className="kpi-card-v2">
-            <div className="kpi-card-icon kpi-icon-orange"><TriangleAlert size={22} /></div>
-            <div>
-              <div className="kpi-card-label">SITES DÉGRADÉS</div>
-              <div className="kpi-card-value kpi-value-orange">{warn}</div>
-              <div className="kpi-card-sub">{pctWarn}% du parc</div>
-            </div>
-          </div>
-          <div className="kpi-card-v2">
-            <div className="kpi-card-icon kpi-icon-grey"><HelpCircle size={22} /></div>
-            <div>
-              <div className="kpi-card-label">STATUT INCONNU</div>
-              <div className="kpi-card-value kpi-value-grey">{inconnu}</div>
-              <div className="kpi-card-sub">{pctInconnu}% du parc · souvent zone d'insécurité</div>
-            </div>
-          </div>
-          <div className="kpi-card-v2">
-            <div className="kpi-card-icon kpi-icon-red"><X size={22} /></div>
-            <div>
-              <div className="kpi-card-label">SITES HORS SERVICE</div>
-              <div className="kpi-card-value kpi-value-red">{ko}</div>
-              <div className="kpi-card-sub">{pctKo}% du parc</div>
-            </div>
-          </div>
+
+          {CATEGORIES_GRAVITE.map((cat) => {
+            const nombreSites = sitesParCategorie[cat.cle].length;
+            const pct = total > 0 ? ((nombreSites / total) * 100).toFixed(1) : "0";
+            const active = categorieActive === cat.cle;
+            return (
+              <button
+                key={cat.cle}
+                type="button"
+                className={`kpi-card-v2 kpi-card-cliquable ${active ? "kpi-card-active" : ""}`}
+                onClick={() => setCategorieActive(cat.cle)}
+                aria-pressed={active}
+              >
+                <div className={`kpi-card-icon ${cat.classeIcone}`}><cat.Icone size={22} /></div>
+                <div>
+                  <div className="kpi-card-label">{cat.libelle.toUpperCase()}</div>
+                  <div className={`kpi-card-value ${cat.classeValeur}`}>{nombreSites}</div>
+                  <div className="kpi-card-sub">{pct}% du parc</div>
+                </div>
+              </button>
+            );
+          })}
+
           <div className="kpi-card-v2">
             <div className="kpi-card-icon kpi-icon-navy"><Plug size={22} /></div>
             <div>
@@ -390,12 +395,14 @@ function DashboardPage() {
           )}
         </div>
 
-        {/* Sites en anomalie / statut inconnu */}
+        {/* Liste des sites de la categorie de gravite selectionnee -
+            remplace l'ancien panneau "Sites necessitant une attention"
+            (amendement "Tableau de bord et gestion des sites"). */}
         <div className="panel attention-panel">
           <div className="panel-header">
             <h2>
-              <Bell size={16} className="panel-title-icon" /> Sites nécessitant une attention
-              <span className="attention-count">{enAnomalie.length}</span>
+              <Bell size={16} className="panel-title-icon" /> Sites — {categorieInfoActive?.libelle}
+              <span className="attention-count">{sitesCategorieActive.length}</span>
             </h2>
             <div className="panel-header-actions">
               <button className="btn-outline" onClick={charger} disabled={chargement}>
@@ -407,37 +414,11 @@ function DashboardPage() {
             </div>
           </div>
 
-          {/* Section II du compte rendu des amendements : onglet dedie
-              pour les sites de statut "Inconnu", separe des sites
-              degrades/hors service - ils ne sont PAS classes parmi les
-              sites degrades. */}
-          <div className="attention-tabs">
-            <button
-              className={`attention-tab ${ongletAttention === "anomalies" ? "attention-tab-actif" : ""}`}
-              onClick={() => setOngletAttention("anomalies")}
-            >
-              Critiques (hors service) <span className="attention-tab-count">{enAnomalie.length}</span>
-            </button>
-            <button
-              className={`attention-tab ${ongletAttention === "inconnu" ? "attention-tab-actif" : ""}`}
-              onClick={() => setOngletAttention("inconnu")}
-              title="Site injoignable par NetXMS - correspond le plus souvent à une zone d'insécurité, sans l'affirmer automatiquement"
-            >
-              <HelpCircle size={13} /> Statut inconnu <span className="attention-tab-count">{statutInconnu.length}</span>
-            </button>
-          </div>
-
-          {ongletAttention === "inconnu" && (
-            <p className="attention-tab-note">
-              Sites injoignables par NetXMS — correspond le plus souvent à une zone d'insécurité, sans l'affirmer automatiquement pour chaque site.
-            </p>
+          {sitesCategorieActive.length === 0 && !chargement && (
+            <p>Aucun site dans la catégorie « {categorieInfoActive?.libelle} » actuellement.</p>
           )}
 
-          {sitesAttentionActifs.length === 0 && !chargement && (
-            <p>{ongletAttention === "inconnu" ? "Aucun site de statut inconnu actuellement." : "Aucun site en anomalie actuellement."}</p>
-          )}
-
-          {anomalieFiltree.length > 0 && (
+          {sitesCategorieFiltree.length > 0 && (
             <table className="admin-table attention-table">
               <thead>
                 <tr>
@@ -450,7 +431,7 @@ function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {anomalieFiltree.slice(0, 10).map((site) => (
+                {sitesCategorieFiltree.slice(0, 10).map((site) => (
                   <tr key={site.siteId}>
                     <td><div className="site-name-cell"><Building2 size={13} /> {site.nom}</div></td>
                     <td>{site.ville}</td>
@@ -470,9 +451,9 @@ function DashboardPage() {
             </table>
           )}
 
-          {anomalieFiltree.length > 0 && (
+          {sitesCategorieFiltree.length > 0 && (
             <p className="attention-footer">
-              Affichage de {Math.min(10, anomalieFiltree.length)} site(s) sur {sitesAttentionActifs.length}
+              Affichage de {Math.min(10, sitesCategorieFiltree.length)} site(s) sur {sitesCategorieActive.length}
             </p>
           )}
         </div>

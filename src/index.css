@@ -2203,6 +2203,41 @@ body {
 }
 .backoffice-shell .btn.btn-danger:hover { background: #B92A2A; }
 
+/* Menu deroulant du bouton "Exporter" (amendement "Tableau de bord et
+   gestion des sites" : remplace le bouton "Importer" par un choix de
+   format Excel/PDF). */
+.backoffice-shell .export-menu-wrap { position: relative; }
+.backoffice-shell .export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  background: white;
+  border: 1px solid var(--bo-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(16, 32, 61, 0.14);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 170px;
+}
+.backoffice-shell .export-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bo-ink);
+  cursor: pointer;
+  text-align: left;
+}
+.backoffice-shell .export-menu button:hover { background: var(--bo-canvas); }
+
 .backoffice-shell .btn-link { color: var(--bo-primary); font-weight: 600; }
 .backoffice-shell .btn-link:hover { text-decoration: underline; }
 
@@ -2875,6 +2910,22 @@ body {
 .backoffice-shell .kpi-icon-red { background: linear-gradient(135deg, #F87171, #D93535); }
 .backoffice-shell .kpi-icon-navy { background: linear-gradient(135deg, #3B82F6, #0A3D7A); }
 .backoffice-shell .kpi-icon-grey { background: linear-gradient(135deg, #9AA3B5, #5B6478); }
+.backoffice-shell .kpi-icon-majeur { background: linear-gradient(135deg, #F59E0B, #B8560D); }
+
+/* Cartes KPI cliquables (amendement "Tableau de bord et gestion des
+   sites" : 5 categories de gravite, chacune filtre la liste de sites
+   ci-dessous au clic) - <button> plutot que <div>, reset des styles par
+   defaut d'un bouton pour garder l'apparence d'une carte KPI normale. */
+.backoffice-shell .kpi-card-cliquable {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  width: 100%;
+}
+.backoffice-shell .kpi-card-cliquable.kpi-card-active {
+  border-color: var(--bo-primary);
+  box-shadow: 0 0 0 2px rgba(10, 61, 122, 0.15);
+}
 
 .backoffice-shell .kpi-card-label {
   font-size: 10px;
@@ -3021,18 +3072,6 @@ body {
   height: 100%;
   border-radius: 3px;
   transition: width 0.4s;
-}
-
-/* Resultat de l'import CSV de sites */
-.backoffice-shell .import-resultat-panel { border-left: 4px solid var(--bo-ok); }
-.backoffice-shell .import-resultat-panel.import-resultat-avec-erreurs { border-left-color: var(--bo-warn); }
-.backoffice-shell .import-resultat-erreurs {
-  margin: 8px 0 0;
-  padding-left: 20px;
-  font-size: 13px;
-  color: var(--bo-warn);
-  max-height: 200px;
-  overflow-y: auto;
 }
 
 /* Panneau Sites en attention */
@@ -3199,6 +3238,7 @@ body {
 .backoffice-shell .kpi-value-orange { color: var(--bo-warn); }
 .backoffice-shell .kpi-value-red { color: var(--bo-ko); }
 .backoffice-shell .kpi-value-grey { color: var(--bo-ink-muted); }
+.backoffice-shell .kpi-value-majeur { color: #B8560D; }
 
 /* Legende du cercle sante : 3 cartes distinctes */
 .backoffice-shell .health-legend-grid {
