@@ -21,8 +21,11 @@ function SitesPage() {
   // Section I du compte rendu des amendements : permettre de n'afficher
   // que les sites ayant au moins un equipement rattache (des sites a 0
   // equipement existent - cf. deux pipelines de synchronisation NetXMS
-  // independants pour les sites et les equipements).
-  const [avecEquipementUniquement, setAvecEquipementUniquement] = useState(false);
+  // independants pour les sites et les equipements). Retour utilisateur
+  // (30/10/2026, document "Les differents remarques (1)") : actif PAR
+  // DEFAUT desormais (1652 -> 768 sites attendus des l'ouverture de la
+  // page).
+  const [avecEquipementUniquement, setAvecEquipementUniquement] = useState(true);
   const [pageCourante, setPageCourante] = useState(1);
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
@@ -117,10 +120,13 @@ function SitesPage() {
     setFiltreProvince("");
     setFiltreVille("");
     setFiltreMinistere("");
-    setAvecEquipementUniquement(false);
+    setAvecEquipementUniquement(true);
   }
 
-  const aDesFiltres = filtreNom || filtreRegion || filtreProvince || filtreVille || filtreMinistere || avecEquipementUniquement;
+  // "avecEquipementUniquement" est desormais actif PAR DEFAUT (etat
+  // normal, pas un filtre "en plus") - seul le fait de le DESACTIVER
+  // (pour voir aussi les sites sans equipement) compte comme un filtre.
+  const aDesFiltres = filtreNom || filtreRegion || filtreProvince || filtreVille || filtreMinistere || !avecEquipementUniquement;
 
   const sitesFiltres = sites.filter((site) => {
     if (filtreNom && !site.nom.toLowerCase().includes(filtreNom.toLowerCase())) return false;

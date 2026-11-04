@@ -53,7 +53,10 @@ function CartographyPage() {
   // uniquement" que sur Gestion des sites (SitesPage.jsx) - certains
   // sites importes n'ont pas encore d'equipement rattache (deux
   // pipelines de synchronisation NetXMS independants).
-  const [avecEquipementUniquement, setAvecEquipementUniquement] = useState(false);
+  // Retour utilisateur (30/10/2026, document "Les differents remarques
+  // (1)") : actif PAR DEFAUT desormais (1652 -> 768 sites attendus des
+  // l'ouverture de la page, sans action de l'utilisateur).
+  const [avecEquipementUniquement, setAvecEquipementUniquement] = useState(true);
   const [recherche, setRecherche] = useState("");
   const [pageCourante, setPageCourante] = useState(1);
 
@@ -227,7 +230,11 @@ function CartographyPage() {
     ? [brouillon.latitude, brouillon.longitude]
     : CENTRE_BURKINA_FASO;
 
-  const aDesFiltres = filtreRegion || filtreProvince || filtreVille || filtreMinistere || filtreStatut || avecEquipementUniquement || recherche;
+  // "avecEquipementUniquement" est desormais actif PAR DEFAUT (etat
+  // normal, pas un filtre "en plus") - ne compte donc pas comme un
+  // filtre actif pour le bouton "Effacer les filtres", seul le fait de
+  // le DESACTIVER (pour voir aussi les sites sans equipement) en est un.
+  const aDesFiltres = filtreRegion || filtreProvince || filtreVille || filtreMinistere || filtreStatut || !avecEquipementUniquement || recherche;
 
   return (
     <>
@@ -438,7 +445,7 @@ function CartographyPage() {
                 <button className="btn-outline" style={{ width: "100%", fontSize: "11px" }}
                   onClick={() => {
                     setFiltreRegion(""); setFiltreProvince(""); setFiltreVille("");
-                    setFiltreMinistere(""); setFiltreStatut(""); setAvecEquipementUniquement(false); setRecherche("");
+                    setFiltreMinistere(""); setFiltreStatut(""); setAvecEquipementUniquement(true); setRecherche("");
                     setProvinces(stats?.provinces || []); setVilles(stats?.villes || []);
                     setPageCourante(1);
                   }}><X size={12} /> Effacer les filtres</button>
