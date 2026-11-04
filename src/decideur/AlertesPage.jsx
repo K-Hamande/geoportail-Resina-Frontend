@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, Globe, Building2, TriangleAlert, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, Globe, Building2, TriangleAlert, CheckCircle2, XCircle, ChevronLeft, ChevronRight, CircleHelp } from "lucide-react";
 import { apiGet, apiPost } from "../shared/apiClient";
-import { getStatusColor, getStatusLabel, getStatusIcon } from "../shared/statusStyles";
 import { formaterTempsRelatif } from "../shared/timeFormat";
 import { useSiteSelection } from "../shared/SiteSelectionContext";
 import ErrorBanner from "../shared/ErrorBanner";
@@ -25,10 +24,20 @@ function chargerIdsLus() {
   }
 }
 
-function badgeClassReseau(status) {
-  if (status === "KO") return "badge-ko";
-  if (status === "WARN") return "badge-warn";
-  return "badge-ok";
+// Retour utilisateur : les alertes reseau affichent desormais leur
+// niveau de criticite fin (Critique/Majeur/Moyen), calcule cote backend
+// depuis le code NetXMS brut (voir IncidentDto.gravite) - plutot que le
+// seul statut agrege OK/WARN/KO. Couleurs alignees sur le panneau
+// "Equipements par niveau de gravite" du Backoffice pour rester
+// coherent visuellement entre les 2 interfaces.
+const GRAVITE_INFOS = {
+  CRITIQUE: { classe: "badge-ko", couleur: "#D93535", Icone: XCircle, libelle: "Critique" },
+  MAJEUR: { classe: "badge-majeur", couleur: "#B8560D", Icone: TriangleAlert, libelle: "Majeur" },
+  MOYEN: { classe: "badge-warn", couleur: "#C97C0A", Icone: TriangleAlert, libelle: "Moyen" },
+  INCONNU: { classe: "badge-unknown", couleur: "#6B7280", Icone: CircleHelp, libelle: "Inconnu" },
+};
+function infosGravite(gravite) {
+  return GRAVITE_INFOS[gravite] ?? GRAVITE_INFOS.INCONNU;
 }
 
 // Statut brut d'un ticket iTop (operational_status) - distinct de
@@ -222,11 +231,12 @@ function AlertesPage() {
           <div className="floors-title" style={{ marginBottom: 0 }}>
             {onglet === "reseau" ? "Alertes réseau" : "Incidents"} ({nonLusOngletActif})
           </div>
-          {/* Retour utilisateur : le badge de la barre inferieure compte
-              les SITES en anomalie, different du nombre d'alertes ici
-              (un site peut cumuler une alerte ANPTIC + une alerte reseau
-              local) - rendu explicite plutot que de laisser les 2
-              chiffres se contredire silencieusement. */}
+          {/* Retour utilisateur : toutes les alertes sont desormais listees
+              ici (plus seulement les critiques), triees par ordre de
+              criticite decroissant. Seule cause d'ecart restante avec le
+              badge de la barre de navigation (qui compte les SITES, pas
+              les alertes) : un site peut cumuler une alerte ANPTIC et une
+              alerte reseau local. */}
           {onglet === "reseau" && alertesReseau.length > sitesDistinctsReseau && (
             <p className="alertes-note-ecart">
               {alertesReseau.length} alerte(s) sur {sitesDistinctsReseau} site(s) — un site peut cumuler une alerte ANPTIC et une alerte réseau local.
@@ -278,10 +288,9 @@ function AlertesPage() {
 
           <div className="alerts-grid">
             {alertesReseauPage.map((alerte) => {
-          const couleur = getStatusColor(alerte.nouveauStatut);
+          const { classe, couleur, Icone: StatutIcone, libelle } = infosGravite(alerte.gravite);
           const lu = idsLus.has(alerte.id);
           const TypeIcone = alerte.type === "ANPTIC" ? Globe : Building2;
-          const StatutIcone = getStatusIcon(alerte.nouveauStatut);
 
           return (
             <div
@@ -299,8 +308,8 @@ function AlertesPage() {
                   <div className="card-title">{alerte.siteNom}</div>
                   <div className="card-subtitle">{alerte.ville}</div>
                 </div>
-                <span className={`status-badge ${badgeClassReseau(alerte.nouveauStatut)}`}>
-                  <StatutIcone size={12} strokeWidth={3} /> {getStatusLabel(alerte.nouveauStatut)}
+                <span className={`status-badge ${classe}`}>
+                  <StatutIcone size={12} strokeWidth={3} /> {libelle}
                 </span>
               </div>
 

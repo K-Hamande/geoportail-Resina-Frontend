@@ -23,10 +23,9 @@ function BottomNav({ alertCount = 0 }) {
         Alertes
         {/* Retour utilisateur : ce badge compte les SITES en anomalie, pas
             les alertes individuelles (un site peut cumuler une alerte
-            ANPTIC et une alerte reseau local - voir AlertesPage, qui
-            affiche ces 2 entrees separement). D'ou un chiffre different de
-            celui affiche sur la page Alertes elle-meme - explique via ce
-            titre plutot que de masquer la difference. */}
+            ANPTIC et une alerte reseau local, comptees separement sur la
+            page Alertes - qui liste desormais tous les niveaux de
+            criticite, triee du plus grave au moins grave). */}
         {alertCount > 0 && (
           <span className="nav-badge" title={`${alertCount} site(s) en anomalie — une alerte réseau peut en compter davantage (ANPTIC + réseau local)`}>
             {alertCount}
