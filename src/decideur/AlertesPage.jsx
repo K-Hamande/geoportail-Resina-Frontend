@@ -153,6 +153,11 @@ function AlertesPage() {
   }
 
   const totalItems = alertesReseau.length + incidentsItop.length;
+  // Retour utilisateur : explique pourquoi ce compteur peut differer de
+  // celui de la barre de navigation (qui compte les SITES en anomalie,
+  // pas les alertes individuelles) - un meme site peut cumuler une
+  // alerte ANPTIC et une alerte reseau local, donc apparaitre 2 fois ici.
+  const sitesDistinctsReseau = new Set(alertesReseau.map((a) => a.siteId)).size;
   const nonLusReseau = alertesReseau.filter((a) => !idsLus.has(a.id)).length;
   const nonLusItop = incidentsItop.filter((i) => !idsLus.has(i.ref)).length;
   const nonLusOngletActif = onglet === "reseau" ? nonLusReseau : nonLusItop;
@@ -213,8 +218,20 @@ function AlertesPage() {
       )}
 
       <div className="alertes-header-row">
-        <div className="floors-title" style={{ marginBottom: 0 }}>
-          {onglet === "reseau" ? "Alertes réseau" : "Incidents"} ({nonLusOngletActif})
+        <div>
+          <div className="floors-title" style={{ marginBottom: 0 }}>
+            {onglet === "reseau" ? "Alertes réseau" : "Incidents"} ({nonLusOngletActif})
+          </div>
+          {/* Retour utilisateur : le badge de la barre inferieure compte
+              les SITES en anomalie, different du nombre d'alertes ici
+              (un site peut cumuler une alerte ANPTIC + une alerte reseau
+              local) - rendu explicite plutot que de laisser les 2
+              chiffres se contredire silencieusement. */}
+          {onglet === "reseau" && alertesReseau.length > sitesDistinctsReseau && (
+            <p className="alertes-note-ecart">
+              {alertesReseau.length} alerte(s) sur {sitesDistinctsReseau} site(s) — un site peut cumuler une alerte ANPTIC et une alerte réseau local.
+            </p>
+          )}
         </div>
         {((onglet === "reseau" && alertesReseau.length > 0) || (onglet === "itop" && incidentsItop.length > 0)) && (
           <button className="btn-link" onClick={toutMarquerLu}>Tout marquer lu</button>

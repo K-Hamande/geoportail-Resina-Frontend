@@ -650,10 +650,17 @@ function OngletIncidentsItop({ getAuthHeader, ministeres }) {
               </SearchableSelect>
             </div>
 
+            {/* Renomme en "Structure" (pas "Ministere") : ce filtre est un
+                match EXACT sur org_name cote iTop, qui correspond a une
+                structure precise (ex: "DIRECTION GENERALE DE LA POLICE
+                NATIONALE"), pas au ministere de rattachement - iTop ne
+                connait pas la hierarchie structure -> ministere utilisee
+                par ailleurs dans Geoportail RESINA (voir le chantier
+                "mapping Structure/Ministere", reporte). */}
             <div className="cascade-group">
-              <label className="cascade-label">Ministère</label>
+              <label className="cascade-label">Structure</label>
               <SearchableSelect selectClassName="attention-search" value={ministere} onChange={(e) => onChangeMinistere(e.target.value)}>
-                <option value="">Tous les ministères</option>
+                <option value="">Toutes les structures</option>
                 {ministeres.map((m) => <option key={m} value={m}>{m}</option>)}
               </SearchableSelect>
             </div>
@@ -694,7 +701,7 @@ function OngletIncidentsItop({ getAuthHeader, ministeres }) {
             "disponibilite" ici, qui n'aurait pas de sens sans population
             de sites. */}
         <p style={{ color: "var(--bo-ink-muted)", marginTop: "-4px", marginBottom: "10px", fontSize: "12.5px" }}>
-          « Nb incidents (ministère) » est calculé par ministère (les tickets iTop n'ont pas de site précis rattaché), sur la période et les filtres actifs ci-dessus.
+          « Nb incidents (structure) » est calculé par structure (org_name iTop) — les tickets iTop n'ont ni site précis rattaché, ni notion de ministère, sur la période et les filtres actifs ci-dessus.
         </p>
 
         {chargement && <Preloader />}
@@ -706,11 +713,11 @@ function OngletIncidentsItop({ getAuthHeader, ministeres }) {
                 <tr>
                   <th>RÉFÉRENCE</th>
                   <th>TITRE</th>
-                  <th>MINISTÈRE</th>
+                  <th>STRUCTURE</th>
                   <th>STATUT</th>
                   <th>DATE D'INCIDENT</th>
                   <th>CLÔTURE</th>
-                  <th>NB INCIDENTS (MINISTÈRE)</th>
+                  <th>NB INCIDENTS (STRUCTURE)</th>
                 </tr>
               </thead>
               <tbody>

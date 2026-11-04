@@ -487,6 +487,12 @@ body {
 
 .floors-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); margin-bottom: 8px; font-weight: 700; }
 
+/* Explique l'ecart entre le nombre d'alertes (page Alertes) et le nombre
+   de sites en anomalie (badge de la barre de navigation) - retour
+   utilisateur : les deux chiffres sont corrects mais ne comptent pas la
+   meme chose (alertes individuelles vs sites distincts). */
+.alertes-note-ecart { font-size: 11px; color: var(--color-text-muted); margin: 2px 0 8px; }
+
 .floor-row {
   display: flex;
   gap: 10px;

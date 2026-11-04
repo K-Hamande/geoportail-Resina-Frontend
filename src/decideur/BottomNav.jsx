@@ -21,7 +21,17 @@ function BottomNav({ alertCount = 0 }) {
       <NavLink to="/alertes" className={linkClass}>
         <span className="nav-icon"><Bell size={20} /></span>
         Alertes
-        {alertCount > 0 && <span className="nav-badge">{alertCount}</span>}
+        {/* Retour utilisateur : ce badge compte les SITES en anomalie, pas
+            les alertes individuelles (un site peut cumuler une alerte
+            ANPTIC et une alerte reseau local - voir AlertesPage, qui
+            affiche ces 2 entrees separement). D'ou un chiffre different de
+            celui affiche sur la page Alertes elle-meme - explique via ce
+            titre plutot que de masquer la difference. */}
+        {alertCount > 0 && (
+          <span className="nav-badge" title={`${alertCount} site(s) en anomalie — une alerte réseau peut en compter davantage (ANPTIC + réseau local)`}>
+            {alertCount}
+          </span>
+        )}
       </NavLink>
     </nav>
   );
